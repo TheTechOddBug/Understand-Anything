@@ -36,3 +36,10 @@ export {
   type LanguageLessonResult,
 } from "./analyzer/language-lesson.js";
 export { PluginRegistry } from "./plugins/registry.js";
+export {
+  parsePluginConfig,
+  serializePluginConfig,
+  DEFAULT_PLUGIN_CONFIG,
+  type PluginConfig,
+  type PluginEntry,
+} from "./plugins/discovery.js";
