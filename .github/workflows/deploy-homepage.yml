@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'homepage/**'
+      - '.github/workflows/deploy-homepage.yml'
   workflow_dispatch:
 
 permissions:
