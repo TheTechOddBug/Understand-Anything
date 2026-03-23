@@ -122,11 +122,9 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 ### OpenCode
 
-`opencode.json` dosyana ekle:
-```json
-{
-  "plugin": ["understand-anything@git+https://github.com/Lum1104/Understand-Anything.git"]
-}
+OpenCode'a söyle:
+```
+Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Understand-Anything/refs/heads/main/.opencode/INSTALL.md
 ```
 
 ### OpenClaw
@@ -153,7 +151,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 |----------|--------|----------------|
 | Claude Code | ✅ Yerli | Eklenti pazarı |
 | Codex | ✅ Destekleniyor | AI güdümlü kurulum |
-| OpenCode | ✅ Destekleniyor | Eklenti yapılandırması |
+| OpenCode | ✅ Destekleniyor | AI güdümlü kurulum |
 | OpenClaw | ✅ Destekleniyor | AI güdümlü kurulum |
 | Cursor | ✅ Destekleniyor | Otomatik keşif |
 | Antigravity | ✅ Destekleniyor | AI güdümlü kurulum |
