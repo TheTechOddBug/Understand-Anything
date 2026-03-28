@@ -1,12 +1,14 @@
 import { z } from "zod";
 
-// Edge types (18 values across 5 categories)
+// Edge types (26 values across 6 categories)
 export const EdgeTypeSchema = z.enum([
   "imports", "exports", "contains", "inherits", "implements",  // Structural
   "calls", "subscribes", "publishes", "middleware",             // Behavioral
   "reads_from", "writes_to", "transforms", "validates",        // Data flow
   "depends_on", "tested_by", "configures",                     // Dependencies
   "related", "similar_to",                                      // Semantic
+  "deploys", "serves", "migrates", "documents",                // Infrastructure
+  "provisions", "routes", "defines_schema", "triggers",        // Infrastructure
 ]);
 
 // Aliases that LLMs commonly generate instead of canonical node types
@@ -19,6 +21,35 @@ export const NODE_TYPE_ALIASES: Record<string, string> = {
   mod: "module",
   pkg: "module",
   package: "module",
+  // Non-code aliases
+  container: "service",
+  deployment: "service",
+  pod: "service",
+  doc: "document",
+  readme: "document",
+  docs: "document",
+  workflow: "pipeline",
+  job: "pipeline",
+  ci: "pipeline",
+  action: "pipeline",
+  route: "endpoint",
+  api: "endpoint",
+  query: "endpoint",
+  mutation: "endpoint",
+  setting: "config",
+  env: "config",
+  configuration: "config",
+  infra: "resource",
+  infrastructure: "resource",
+  terraform: "resource",
+  migration: "table",
+  database: "table",
+  db: "table",
+  view: "table",
+  proto: "schema",
+  protobuf: "schema",
+  definition: "schema",
+  typedef: "schema",
 };
 
 // Aliases that LLMs commonly generate instead of canonical edge types
@@ -36,6 +67,18 @@ export const EDGE_TYPE_ALIASES: Record<string, string> = {
   contain: "contains",
   publish: "publishes",
   subscribe: "subscribes",
+  // Non-code aliases
+  describes: "documents",
+  documented_by: "documents",
+  creates: "provisions",
+  exposes: "serves",
+  listens: "serves",
+  deploys_to: "deploys",
+  migrates_to: "migrates",
+  routes_to: "routes",
+  triggers_on: "triggers",
+  fires: "triggers",
+  defines: "defines_schema",
 };
 
 // Aliases for complexity values LLMs commonly generate
@@ -266,7 +309,11 @@ export function autoFixGraph(data: Record<string, unknown>): {
 
 export const GraphNodeSchema = z.object({
   id: z.string(),
-  type: z.enum(["file", "function", "class", "module", "concept"]),
+  type: z.enum([
+    "file", "function", "class", "module", "concept",
+    "config", "document", "service", "table", "endpoint",
+    "pipeline", "schema", "resource",
+  ]),
   name: z.string(),
   filePath: z.string().optional(),
   lineRange: z.tuple([z.number(), z.number()]).optional(),

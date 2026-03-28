@@ -662,3 +662,61 @@ describe("permissive validation", () => {
     expect(result.errors).toContain('edges[0]: target "non-existent-node" does not exist in nodes — removed');
   });
 });
+
+describe("Extended node/edge types", () => {
+  it("validates nodes with new types: config, document, service, table, endpoint, pipeline, schema, resource", () => {
+    const newTypes = ["config", "document", "service", "table", "endpoint", "pipeline", "schema", "resource"];
+    for (const type of newTypes) {
+      const graph = structuredClone(validGraph);
+      (graph.nodes[0] as any).type = type;
+      const result = validateGraph(graph);
+      expect(result.success).toBe(true);
+      expect(result.data!.nodes[0].type).toBe(type);
+    }
+  });
+
+  it("validates edges with new types: deploys, serves, migrates, documents, provisions, routes, defines_schema, triggers", () => {
+    const newTypes = ["deploys", "serves", "migrates", "documents", "provisions", "routes", "defines_schema", "triggers"];
+    for (const type of newTypes) {
+      const graph = structuredClone(validGraph);
+      (graph.edges[0] as any).type = type;
+      const result = validateGraph(graph);
+      expect(result.success).toBe(true);
+      expect(result.data!.edges[0].type).toBe(type);
+    }
+  });
+
+  it("auto-fixes new node type aliases: container->service, doc->document, workflow->pipeline, etc.", () => {
+    const aliases: Record<string, string> = {
+      container: "service",
+      doc: "document",
+      workflow: "pipeline",
+      route: "endpoint",
+      setting: "config",
+      infra: "resource",
+      migration: "table",
+    };
+    for (const [alias, canonical] of Object.entries(aliases)) {
+      const graph = structuredClone(validGraph);
+      (graph.nodes[0] as any).type = alias;
+      const result = validateGraph(graph);
+      expect(result.success).toBe(true);
+      expect(result.data!.nodes[0].type).toBe(canonical);
+    }
+  });
+
+  it("auto-fixes new edge type aliases: describes->documents, creates->provisions, exposes->serves", () => {
+    const aliases: Record<string, string> = {
+      describes: "documents",
+      creates: "provisions",
+      exposes: "serves",
+    };
+    for (const [alias, canonical] of Object.entries(aliases)) {
+      const graph = structuredClone(validGraph);
+      (graph.edges[0] as any).type = alias;
+      const result = validateGraph(graph);
+      expect(result.success).toBe(true);
+      expect(result.data!.edges[0].type).toBe(canonical);
+    }
+  });
+});
