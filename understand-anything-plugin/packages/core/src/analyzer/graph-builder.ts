@@ -3,6 +3,12 @@ import type {
   GraphNode,
   GraphEdge,
   StructuralAnalysis,
+  DefinitionInfo,
+  ServiceInfo,
+  EndpointInfo,
+  StepInfo,
+  ResourceInfo,
+  SectionInfo,
 } from "../types.js";
 
 interface FileMeta {
@@ -16,7 +22,21 @@ interface FileAnalysisMeta extends FileMeta {
   fileSummary: string;
 }
 
+interface NonCodeFileMeta extends FileMeta {
+  nodeType: GraphNode["type"];
+}
+
+interface NonCodeFileAnalysisMeta extends NonCodeFileMeta {
+  definitions?: DefinitionInfo[];
+  services?: ServiceInfo[];
+  endpoints?: EndpointInfo[];
+  steps?: StepInfo[];
+  resources?: ResourceInfo[];
+  sections?: SectionInfo[];
+}
+
 const EXTENSION_LANGUAGE: Record<string, string> = {
+  // Code languages
   ".ts": "typescript",
   ".tsx": "typescript",
   ".js": "javascript",
@@ -37,20 +57,41 @@ const EXTENSION_LANGUAGE: Record<string, string> = {
   ".cs": "csharp",
   ".php": "php",
   ".lua": "lua",
+  // Non-code languages
   ".sh": "shell",
   ".bash": "shell",
   ".zsh": "shell",
   ".json": "json",
+  ".jsonc": "json",
   ".yaml": "yaml",
   ".yml": "yaml",
   ".toml": "toml",
   ".xml": "xml",
   ".html": "html",
+  ".htm": "html",
   ".css": "css",
-  ".scss": "scss",
-  ".less": "less",
+  ".scss": "css",
+  ".less": "css",
   ".md": "markdown",
+  ".mdx": "markdown",
   ".sql": "sql",
+  ".graphql": "graphql",
+  ".gql": "graphql",
+  ".proto": "protobuf",
+  ".tf": "terraform",
+  ".tfvars": "terraform",
+  ".mk": "makefile",
+  ".env": "env",
+  ".csv": "csv",
+  ".tsv": "csv",
+  ".rst": "restructuredtext",
+  ".ps1": "powershell",
+  ".psm1": "powershell",
+  ".psd1": "powershell",
+  ".bat": "batch",
+  ".cmd": "batch",
+  ".txt": "plaintext",
+  ".svg": "xml",
 };
 
 function detectLanguage(filePath: string): string {
@@ -185,6 +226,129 @@ export class GraphBuilder {
       direction: "forward",
       weight: 0.8,
     });
+  }
+
+  addNonCodeFile(filePath: string, meta: NonCodeFileMeta): void {
+    const lang = detectLanguage(filePath);
+    if (lang !== "unknown") this.languages.add(lang);
+    const name = filePath.split("/").pop() ?? filePath;
+    this.nodes.push({
+      id: `file:${filePath}`,
+      type: meta.nodeType,
+      name,
+      filePath,
+      summary: meta.summary,
+      tags: meta.tags,
+      complexity: meta.complexity,
+    });
+  }
+
+  addNonCodeFileWithAnalysis(filePath: string, meta: NonCodeFileAnalysisMeta): void {
+    this.addNonCodeFile(filePath, meta);
+    const fileId = `file:${filePath}`;
+
+    // Create child nodes for definitions (tables, schemas, etc.)
+    for (const def of meta.definitions ?? []) {
+      const childId = `${def.kind}:${filePath}:${def.name}`;
+      this.nodes.push({
+        id: childId,
+        type: this.mapKindToNodeType(def.kind),
+        name: def.name,
+        filePath,
+        lineRange: def.lineRange,
+        summary: `${def.kind}: ${def.name} (${def.fields.length} fields)`,
+        tags: [],
+        complexity: meta.complexity,
+      });
+      this.edges.push({ source: fileId, target: childId, type: "contains", direction: "forward", weight: 1 });
+    }
+
+    // Create child nodes for services
+    for (const svc of meta.services ?? []) {
+      const childId = `service:${filePath}:${svc.name}`;
+      this.nodes.push({
+        id: childId,
+        type: "service",
+        name: svc.name,
+        filePath,
+        summary: `Service ${svc.name}${svc.image ? ` (image: ${svc.image})` : ""}`,
+        tags: [],
+        complexity: meta.complexity,
+      });
+      this.edges.push({ source: fileId, target: childId, type: "contains", direction: "forward", weight: 1 });
+    }
+
+    // Create child nodes for endpoints
+    for (const ep of meta.endpoints ?? []) {
+      const childId = `endpoint:${filePath}:${ep.path}`;
+      this.nodes.push({
+        id: childId,
+        type: "endpoint",
+        name: `${ep.method ?? ""} ${ep.path}`.trim(),
+        filePath,
+        lineRange: ep.lineRange,
+        summary: `Endpoint: ${ep.method ?? ""} ${ep.path}`.trim(),
+        tags: [],
+        complexity: meta.complexity,
+      });
+      this.edges.push({ source: fileId, target: childId, type: "contains", direction: "forward", weight: 1 });
+    }
+
+    // Create child nodes for steps (pipeline/makefile targets)
+    for (const step of meta.steps ?? []) {
+      const childId = `step:${filePath}:${step.name}`;
+      this.nodes.push({
+        id: childId,
+        type: "pipeline",
+        name: step.name,
+        filePath,
+        lineRange: step.lineRange,
+        summary: `Step: ${step.name}`,
+        tags: [],
+        complexity: meta.complexity,
+      });
+      this.edges.push({ source: fileId, target: childId, type: "contains", direction: "forward", weight: 1 });
+    }
+
+    // Create child nodes for resources (Terraform, etc.)
+    for (const res of meta.resources ?? []) {
+      const childId = `resource:${filePath}:${res.name}`;
+      this.nodes.push({
+        id: childId,
+        type: "resource",
+        name: res.name,
+        filePath,
+        lineRange: res.lineRange,
+        summary: `Resource: ${res.name} (${res.kind})`,
+        tags: [],
+        complexity: meta.complexity,
+      });
+      this.edges.push({ source: fileId, target: childId, type: "contains", direction: "forward", weight: 1 });
+    }
+  }
+
+  private mapKindToNodeType(kind: string): GraphNode["type"] {
+    const mapping: Record<string, GraphNode["type"]> = {
+      table: "table",
+      view: "table",
+      index: "table",
+      message: "schema",
+      type: "schema",
+      enum: "schema",
+      resource: "resource",
+      module: "resource",
+      service: "service",
+      deployment: "service",
+      job: "pipeline",
+      stage: "pipeline",
+      target: "pipeline",
+      route: "endpoint",
+      query: "endpoint",
+      mutation: "endpoint",
+      variable: "config",
+      output: "config",
+    };
+    return mapping[kind] ?? "concept";
   }
 
   build(): KnowledgeGraph {
