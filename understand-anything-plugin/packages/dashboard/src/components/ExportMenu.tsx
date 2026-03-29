@@ -41,6 +41,63 @@ export default function ExportMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [exportMenuOpen, toggleExportMenu]);
 
+  const buildCleanSvg = () => {
+    if (!reactFlowInstance) return null;
+
+    const nodes = reactFlowInstance.getNodes();
+    const edges = reactFlowInstance.getEdges();
+    if (nodes.length === 0) return null;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach((node) => {
+      const x = node.position.x;
+      const y = node.position.y;
+      const width = (node.width ?? 200);
+      const height = (node.height ?? 80);
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+
+    const padding = 40;
+    const width = maxX - minX + padding * 2;
+    const height = maxY - minY + padding * 2;
+    const offsetX = -minX + padding;
+    const offsetY = -minY + padding;
+
+    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+    svgContent += `<rect width="100%" height="100%" fill="#0a0a0a"/>`;
+
+    edges.forEach((edge) => {
+      const sourceNode = nodes.find((n) => n.id === edge.source);
+      const targetNode = nodes.find((n) => n.id === edge.target);
+      if (!sourceNode || !targetNode) return;
+
+      const sx = sourceNode.position.x + (sourceNode.width ?? 200) / 2 + offsetX;
+      const sy = sourceNode.position.y + (sourceNode.height ?? 80) / 2 + offsetY;
+      const tx = targetNode.position.x + (targetNode.width ?? 200) / 2 + offsetX;
+      const ty = targetNode.position.y + (targetNode.height ?? 80) / 2 + offsetY;
+
+      svgContent += `<line x1="${sx}" y1="${sy}" x2="${tx}" y2="${ty}" stroke="rgba(212,165,116,0.3)" stroke-width="1.5"/>`;
+    });
+
+    nodes.forEach((node) => {
+      if (node.type === "group") return;
+
+      const x = node.position.x + offsetX;
+      const y = node.position.y + offsetY;
+      const w = node.width ?? 200;
+      const h = node.height ?? 80;
+
+      svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#1a1a1a" stroke="rgba(212,165,116,0.2)" stroke-width="1"/>`;
+      svgContent += `<text x="${x + w / 2}" y="${y + h / 2}" fill="#d4a574" text-anchor="middle" dominant-baseline="middle" font-size="12">${escapeXml(String(node.data.label ?? node.id))}</text>`;
+    });
+
+    svgContent += `</svg>`;
+    return { svgContent, width, height };
+  };
+
   const exportPNG = async () => {
     if (!reactFlowInstance) {
       alert("Graph not ready for export");
@@ -48,63 +105,20 @@ export default function ExportMenu() {
     }
 
     try {
-      // Get the viewport element
-      const viewport = document.querySelector(".react-flow__viewport") as HTMLElement;
-      if (!viewport) {
-        throw new Error("Viewport not found");
-      }
-
-      // Get the bounding box of all nodes
-      const nodes = reactFlowInstance.getNodes();
-      if (nodes.length === 0) {
+      const result = buildCleanSvg();
+      if (!result) {
         alert("No nodes to export");
         return;
       }
 
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      nodes.forEach((node) => {
-        const x = node.position.x;
-        const y = node.position.y;
-        const width = (node.width ?? 200);
-        const height = (node.height ?? 80);
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + width);
-        maxY = Math.max(maxY, y + height);
-      });
-
-      const padding = 40;
-      const width = maxX - minX + padding * 2;
-      const height = maxY - minY + padding * 2;
-
-      // Clone the viewport
-      const clone = viewport.cloneNode(true) as HTMLElement;
-      clone.style.transform = `translate(${-minX + padding}px, ${-minY + padding}px)`;
-
-      // Create an SVG with foreignObject
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("width", String(width * 2));
-      svg.setAttribute("height", String(height * 2));
-      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-      svg.style.backgroundColor = "#0a0a0a";
-
-      const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-      foreignObject.setAttribute("width", "100%");
-      foreignObject.setAttribute("height", "100%");
-      foreignObject.appendChild(clone);
-      svg.appendChild(foreignObject);
-
-      // Serialize SVG to string
-      const svgString = new XMLSerializer().serializeToString(svg);
-      const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const { svgContent, width, height } = result;
+      const svgBlob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(svgBlob);
 
-      // Create an image and draw to canvas
       const img = new Image();
       img.onerror = () => {
         URL.revokeObjectURL(url);
-        console.error("PNG export failed: Image failed to load from SVG blob");
-        alert("Failed to export PNG: could not render graph as image. Try SVG export instead.");
+        alert("Failed to export PNG: could not render graph as image.");
       };
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -116,7 +130,7 @@ export default function ExportMenu() {
           alert("Failed to create canvas context");
           return;
         }
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, width * 2, height * 2);
         URL.revokeObjectURL(url);
 
         const filename = `${graph?.project.name ?? "knowledge-graph"}-export.png`;
@@ -125,8 +139,7 @@ export default function ExportMenu() {
             downloadBlob(blob, filename);
             toggleExportMenu();
           } else {
-            console.error("PNG export failed: canvas.toBlob returned null (canvas may be tainted)");
-            alert("Failed to export PNG: image encoding failed. Try SVG export instead.");
+            alert("Failed to export PNG: image encoding failed.");
           }
         }, "image/png");
       };
@@ -144,67 +157,13 @@ export default function ExportMenu() {
     }
 
     try {
-      const nodes = reactFlowInstance.getNodes();
-      const edges = reactFlowInstance.getEdges();
-
-      if (nodes.length === 0) {
+      const result = buildCleanSvg();
+      if (!result) {
         alert("No nodes to export");
         return;
       }
 
-      // Calculate bounding box
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      nodes.forEach((node) => {
-        const x = node.position.x;
-        const y = node.position.y;
-        const width = (node.width ?? 200);
-        const height = (node.height ?? 80);
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + width);
-        maxY = Math.max(maxY, y + height);
-      });
-
-      const padding = 40;
-      const width = maxX - minX + padding * 2;
-      const height = maxY - minY + padding * 2;
-      const offsetX = -minX + padding;
-      const offsetY = -minY + padding;
-
-      // Build SVG manually
-      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-      svgContent += `<rect width="100%" height="100%" fill="#0a0a0a"/>`;
-
-      // Draw edges
-      edges.forEach((edge) => {
-        const sourceNode = nodes.find((n) => n.id === edge.source);
-        const targetNode = nodes.find((n) => n.id === edge.target);
-        if (!sourceNode || !targetNode) return;
-
-        const sx = sourceNode.position.x + (sourceNode.width ?? 200) / 2 + offsetX;
-        const sy = sourceNode.position.y + (sourceNode.height ?? 80) / 2 + offsetY;
-        const tx = targetNode.position.x + (targetNode.width ?? 200) / 2 + offsetX;
-        const ty = targetNode.position.y + (targetNode.height ?? 80) / 2 + offsetY;
-
-        svgContent += `<line x1="${sx}" y1="${sy}" x2="${tx}" y2="${ty}" stroke="rgba(212,165,116,0.3)" stroke-width="1.5"/>`;
-      });
-
-      // Draw nodes
-      nodes.forEach((node) => {
-        if (node.type === "group") return; // Skip group nodes
-
-        const x = node.position.x + offsetX;
-        const y = node.position.y + offsetY;
-        const w = node.width ?? 200;
-        const h = node.height ?? 80;
-
-        svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#1a1a1a" stroke="rgba(212,165,116,0.2)" stroke-width="1"/>`;
-        svgContent += `<text x="${x + w / 2}" y="${y + h / 2}" fill="#d4a574" text-anchor="middle" dominant-baseline="middle" font-size="12">${escapeXml(String(node.data.label ?? node.id))}</text>`;
-      });
-
-      svgContent += `</svg>`;
-
-      const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+      const blob = new Blob([result.svgContent], { type: "image/svg+xml;charset=utf-8" });
       const filename = `${graph?.project.name ?? "knowledge-graph"}-export.svg`;
       downloadBlob(blob, filename);
       toggleExportMenu();
