@@ -3,17 +3,32 @@ const features = [
   {
     icon: '◈',
     title: 'Interactive Knowledge Graph',
-    description: 'Visualize files, functions, and dependencies as an explorable graph with smart layout.',
+    description: 'Visualize files, functions, and dependencies as an explorable graph with hierarchical drill-down and smart layout.',
   },
   {
-    icon: '¶',
-    title: 'Plain-English Summaries',
-    description: 'Every node explained in language anyone can understand — from junior devs to product managers.',
+    icon: '⬡',
+    title: 'Beyond Code Analysis',
+    description: 'Analyze your entire project — Dockerfiles, Terraform, SQL, Markdown, and 26+ file types mapped into one unified graph.',
+  },
+  {
+    icon: '⊘',
+    title: 'Smart Filtering & Search',
+    description: 'Filter by node type, complexity, layer, or edge category. Fuzzy and semantic search to find anything instantly.',
+  },
+  {
+    icon: '⎙',
+    title: 'Export & Share',
+    description: 'Export your knowledge graph as high-quality PNG, SVG, or filtered JSON — ready for docs, presentations, or further analysis.',
+  },
+  {
+    icon: '⟿',
+    title: 'Dependency Path Finder',
+    description: 'Find the shortest path between any two components. Understand how parts of your system connect at a glance.',
   },
   {
     icon: '⟐',
-    title: 'Guided Tours',
-    description: 'AI-generated walkthroughs that teach you the codebase step by step.',
+    title: 'Guided Tours & Onboarding',
+    description: 'AI-generated walkthroughs that teach the codebase step by step, plus onboarding guides for new team members.',
   },
 ];
 ---
@@ -21,7 +36,7 @@ const features = [
 <section class="features">
   <div class="features-grid">
     {features.map((f, i) => (
-      <div class={`feature-card reveal reveal-delay-${i + 1}`}>
+      <div class={`feature-card reveal reveal-delay-${(i % 3) + 1}`}>
         <span class="feature-icon">{f.icon}</span>
         <h3 class="feature-title">{f.title}</h3>
         <p class="feature-desc">{f.description}</p>
