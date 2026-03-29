@@ -138,6 +138,15 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 Bu depo klonlandığında Cursor, eklentiyi `.cursor-plugin/plugin.json` aracılığıyla otomatik olarak keşfeder. Manuel kurulum gerekmez — sadece klonla ve Cursor'da aç.
 
+### VS Code + GitHub Copilot
+
+GitHub Copilot uzantısı (v1.108+) yüklü VS Code, `.copilot-plugin/plugin.json` aracılığıyla eklentiyi otomatik keşfeder. Manuel kurulum gerekmez — sadece klonla ve VS Code'da aç.
+
+Tüm projelerde kullanmak için kişisel beceri olarak kurmak istersen GitHub Copilot'a söyle:
+```text
+Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Understand-Anything/refs/heads/main/.vscode/INSTALL.md
+```
+
 ### Antigravity
 
 Antigravity'e söyle:
@@ -168,6 +177,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 | OpenCode | ✅ Destekleniyor | AI güdümlü kurulum |
 | OpenClaw | ✅ Destekleniyor | AI güdümlü kurulum |
 | Cursor | ✅ Destekleniyor | Otomatik keşif |
+| VS Code + GitHub Copilot | ✅ Destekleniyor | Otomatik keşif |
 | Antigravity | ✅ Destekleniyor | AI güdümlü kurulum |
 | Gemini CLI | ✅ Destekleniyor | AI güdümlü kurulum |
 | Pi Agent | ✅ Destekleniyor | AI güdümlü kurulum |
