@@ -146,3 +146,37 @@ export function loadConfig(projectRoot: string): ProjectConfig {
     return { ...DEFAULT_CONFIG };
   }
 }
+
+const DOMAIN_GRAPH_FILE = "domain-graph.json";
+
+export function saveDomainGraph(projectRoot: string, graph: KnowledgeGraph): void {
+  const dir = ensureDir(projectRoot);
+  const sanitised = sanitiseFilePaths(graph, projectRoot);
+  writeFileSync(
+    join(dir, DOMAIN_GRAPH_FILE),
+    JSON.stringify(sanitised, null, 2),
+    "utf-8",
+  );
+}
+
+export function loadDomainGraph(
+  projectRoot: string,
+  options?: { validate?: boolean },
+): KnowledgeGraph | null {
+  const filePath = join(projectRoot, UA_DIR, DOMAIN_GRAPH_FILE);
+  if (!existsSync(filePath)) return null;
+
+  const data = JSON.parse(readFileSync(filePath, "utf-8"));
+
+  if (options?.validate !== false) {
+    const result = validateGraph(data);
+    if (!result.success) {
+      throw new Error(
+        `Invalid domain graph: ${result.fatal ?? "unknown error"}`,
+      );
+    }
+    return result.data as KnowledgeGraph;
+  }
+
+  return data as KnowledgeGraph;
+}
