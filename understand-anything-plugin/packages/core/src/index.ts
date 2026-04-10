@@ -114,3 +114,9 @@ export {
   ShellParser,
   registerAllParsers,
 } from "./plugins/parsers/index.js";
+export {
+  createIgnoreFilter,
+  DEFAULT_IGNORE_PATTERNS,
+  type IgnoreFilter,
+} from "./ignore-filter.js";
+export { generateStarterIgnoreFile } from "./ignore-generator.js";
