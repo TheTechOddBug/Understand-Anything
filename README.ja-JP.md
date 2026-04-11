@@ -11,6 +11,16 @@
 </p>
 
 <p align="center">
+ <a href="https://www.star-history.com/lum1104/understand-anything">
+  <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+  </picture>
+ </a>
+</p>
+
+<p align="center">
   <a href="#-クイックスタート"><img src="https://img.shields.io/badge/Quick_Start-blue" alt="クイックスタート" /></a>
   <a href="https://github.com/Lum1104/Understand-Anything/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT" /></a>
   <a href="https://docs.anthropic.com/en/docs/claude-code"><img src="https://img.shields.io/badge/Claude_Code-8A2BE2" alt="Claude Code" /></a>
