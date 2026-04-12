@@ -39,7 +39,7 @@ Discover all tracked files. In order of preference:
 
 Remove ALL files matching these patterns:
 - **Dependency directories:** paths containing `node_modules/`, `.git/`, `vendor/`, `venv/`, `.venv/`, `__pycache__/`
-- **Build output:** paths with a directory segment matching `dist/`, `build/`, `out/`, `coverage/`, `.next/`, `.cache/`, `.turbo/`, `target/` (Rust) — match full directory segments only, not substrings (e.g., `buildSrc/` should NOT be excluded)
+- **Build output:** paths with a directory segment matching `dist/`, `build/`, `out/`, `coverage/`, `.next/`, `.cache/`, `.turbo/`, `target/` (Rust), `obj/` (.NET) — match full directory segments only, not substrings (e.g., `buildSrc/` should NOT be excluded). Note: `bin/` is NOT excluded by default because Node.js and Ruby projects use `bin/` for CLI launchers; .NET users can add `bin/` to `.understandignore`.
 - **Lock files:** `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
 - **Binary/asset files:** `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.ico`, `.woff`, `.woff2`, `.ttf`, `.eot`, `.mp3`, `.mp4`, `.pdf`, `.zip`, `.tar`, `.gz`
 - **Generated files:** `*.min.js`, `*.min.css`, `*.map`, `*.generated.*` (note: do NOT exclude `*.d.ts` — many projects have hand-written declaration files)
@@ -57,6 +57,18 @@ Remove ALL files matching these patterns:
 - Kubernetes: `*.k8s.yaml`, `*.k8s.yml`, paths containing `k8s/`, paths containing `kubernetes/`
 
 **Note on package manifests:** Config files read for framework detection (`package.json`, `tsconfig.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, etc.) should also appear in the file list with `fileCategory: "config"`.
+
+**Step 2.5 -- User-Configured Filtering (.understandignore)**
+
+When `.understandignore` files exist, **replace** Step 2's hardcoded filtering with a unified filter that combines defaults and user patterns in a single pass. This ensures `!` negation patterns can override defaults.
+
+1. Check if `$PROJECT_ROOT/.understand-anything/.understandignore` exists. If so, read it.
+2. Check if `$PROJECT_ROOT/.understandignore` exists. If so, read it.
+3. If neither file exists, skip this step entirely — Step 2's hardcoded filtering is sufficient.
+4. If at least one file exists, re-filter the **original file list from Step 1** (not the Step 2 output) using the `createIgnoreFilter` function from `@understand-anything/core`, which merges hardcoded defaults and user patterns into a single `.gitignore`-compatible matcher. This ensures `!` negation in user files can override hardcoded defaults (e.g., `!dist/` force-includes dist/ files).
+5. Track the count of additional files removed beyond Step 2's baseline as `filteredByIgnore`.
+
+This filtering must be deterministic (not LLM-based). Use a Node.js script with the `ignore` npm package from `@understand-anything/core`.
 
 **Step 3 -- Language Detection**
 
@@ -217,6 +229,7 @@ The script must write this exact JSON structure to the output file:
     {"path": "package.json", "language": "json", "sizeLines": 35, "fileCategory": "config"}
   ],
   "totalFiles": 42,
+  "filteredByIgnore": 0,
   "estimatedComplexity": "moderate",
   "importMap": {
     "src/index.ts": ["src/utils.ts", "src/config.ts"],
@@ -237,6 +250,7 @@ The script must write this exact JSON structure to the output file:
 - `files` (object[]) -- every discovered file, sorted by `path` alphabetically
 - `files[].fileCategory` (string) -- one of: `code`, `config`, `docs`, `infra`, `data`, `script`, `markup`
 - `totalFiles` (integer) -- must equal `files.length`
+- `filteredByIgnore` (integer) -- count of files removed by `.understandignore` patterns in Step 2.5; 0 if no `.understandignore` file exists
 - `estimatedComplexity` (string) -- one of `small`, `moderate`, `large`, `very-large`
 - `importMap` (object) -- map from every file path to its list of resolved project-internal import paths; empty array for non-code files and files with no resolved imports; external packages excluded
 
@@ -281,6 +295,7 @@ Then assemble the final output JSON:
     {"path": "Dockerfile", "language": "dockerfile", "sizeLines": 22, "fileCategory": "infra"}
   ],
   "totalFiles": 42,
+  "filteredByIgnore": 0,
   "estimatedComplexity": "moderate",
   "importMap": {
     "src/index.ts": ["src/utils.ts"]
@@ -295,6 +310,7 @@ Then assemble the final output JSON:
 - `frameworks` (string[]): directly from script output
 - `files` (object[]): directly from script output, including `fileCategory` per file
 - `totalFiles` (integer): directly from script output
+- `filteredByIgnore` (integer): directly from script output
 - `estimatedComplexity` (string): directly from script output
 - `importMap` (object): directly from script output
 
