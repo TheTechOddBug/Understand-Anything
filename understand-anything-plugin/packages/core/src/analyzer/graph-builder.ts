@@ -412,8 +412,8 @@ export class GraphBuilder {
         analyzedAt: new Date().toISOString(),
         gitCommitHash: this.gitHash,
       },
-      nodes: this.nodes,
-      edges: this.edges,
+      nodes: [...this.nodes],
+      edges: [...this.edges],
       layers: [],
       tour: [],
     };
