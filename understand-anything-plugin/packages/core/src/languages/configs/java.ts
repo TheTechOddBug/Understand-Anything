@@ -4,6 +4,10 @@ export const javaConfig = {
   id: "java",
   displayName: "Java",
   extensions: [".java"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-java",
+    wasmFile: "tree-sitter-java.wasm",
+  },
   concepts: [
     "generics",
     "annotations",

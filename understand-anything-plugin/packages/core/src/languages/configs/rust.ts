@@ -4,6 +4,10 @@ export const rustConfig = {
   id: "rust",
   displayName: "Rust",
   extensions: [".rs"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-rust",
+    wasmFile: "tree-sitter-rust.wasm",
+  },
   concepts: [
     "ownership",
     "borrowing",

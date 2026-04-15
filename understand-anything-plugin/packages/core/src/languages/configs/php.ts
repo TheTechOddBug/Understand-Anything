@@ -4,6 +4,10 @@ export const phpConfig = {
   id: "php",
   displayName: "PHP",
   extensions: [".php"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-php",
+    wasmFile: "tree-sitter-php.wasm",
+  },
   concepts: [
     "namespaces",
     "traits",

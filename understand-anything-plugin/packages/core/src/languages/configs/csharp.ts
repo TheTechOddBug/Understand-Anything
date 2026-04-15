@@ -4,6 +4,10 @@ export const csharpConfig = {
   id: "csharp",
   displayName: "C#",
   extensions: [".cs"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-c-sharp",
+    wasmFile: "tree-sitter-c_sharp.wasm",
+  },
   concepts: [
     "LINQ",
     "async/await",

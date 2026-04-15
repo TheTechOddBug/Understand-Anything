@@ -4,6 +4,10 @@ export const cppConfig = {
   id: "cpp",
   displayName: "C/C++",
   extensions: [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp", ".hxx"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-cpp",
+    wasmFile: "tree-sitter-cpp.wasm",
+  },
   concepts: [
     "templates",
     "RAII",

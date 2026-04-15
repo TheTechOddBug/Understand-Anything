@@ -4,6 +4,10 @@ export const goConfig = {
   id: "go",
   displayName: "Go",
   extensions: [".go"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-go",
+    wasmFile: "tree-sitter-go.wasm",
+  },
   concepts: [
     "goroutines",
     "channels",

@@ -4,6 +4,10 @@ export const pythonConfig = {
   id: "python",
   displayName: "Python",
   extensions: [".py", ".pyi"],
+  treeSitter: {
+    wasmPackage: "tree-sitter-python",
+    wasmFile: "tree-sitter-python.wasm",
+  },
   concepts: [
     "decorators",
     "list comprehensions",
