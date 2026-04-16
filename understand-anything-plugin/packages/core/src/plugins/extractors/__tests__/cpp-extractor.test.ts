@@ -32,7 +32,7 @@ describe("CppExtractor", () => {
   const extractor = new CppExtractor();
 
   it("has correct languageIds", () => {
-    expect(extractor.languageIds).toEqual(["cpp"]);
+    expect(extractor.languageIds).toEqual(["cpp", "c"]);
   });
 
   // ---- Functions ----

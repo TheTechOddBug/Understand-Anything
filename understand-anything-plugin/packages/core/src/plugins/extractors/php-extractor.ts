@@ -124,8 +124,25 @@ export class PhpExtractor implements LanguageExtractor {
     // tree-sitter-php wraps everything under `program`. The children of
     // `program` include `php_tag`, `namespace_definition`, `namespace_use_declaration`,
     // `class_declaration`, `function_definition`, etc.
-    for (let i = 0; i < rootNode.childCount; i++) {
-      const node = rootNode.child(i);
+    this.walkStatements(rootNode, functions, classes, imports, exports);
+
+    return { functions, classes, imports, exports };
+  }
+
+  /**
+   * Walk top-level statements, extracting functions, classes, interfaces, and imports.
+   * Handles both direct children and declarations nested inside block-scoped
+   * `namespace_definition` nodes (`namespace Foo { class Bar {} }`).
+   */
+  private walkStatements(
+    parent: TreeSitterNode,
+    functions: StructuralAnalysis["functions"],
+    classes: StructuralAnalysis["classes"],
+    imports: StructuralAnalysis["imports"],
+    exports: StructuralAnalysis["exports"],
+  ): void {
+    for (let i = 0; i < parent.childCount; i++) {
+      const node = parent.child(i);
       if (!node) continue;
 
       switch (node.type) {
@@ -156,10 +173,19 @@ export class PhpExtractor implements LanguageExtractor {
         case "namespace_use_declaration":
           this.extractUseDeclaration(node, imports);
           break;
+
+        case "namespace_definition": {
+          // Block-scoped namespaces (`namespace Foo { ... }`) nest declarations
+          // inside a compound_statement body. Declarative namespaces (`namespace Foo;`)
+          // have no body — their declarations are already siblings at the root.
+          const body = findChild(node, "compound_statement");
+          if (body) {
+            this.walkStatements(body, functions, classes, imports, exports);
+          }
+          break;
+        }
       }
     }
-
-    return { functions, classes, imports, exports };
   }
 
   extractCallGraph(rootNode: TreeSitterNode): CallGraphEntry[] {

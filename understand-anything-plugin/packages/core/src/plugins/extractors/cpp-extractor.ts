@@ -122,7 +122,7 @@ function isStatic(node: TreeSitterNode): boolean {
  * public class/struct members are treated as exports.
  */
 export class CppExtractor implements LanguageExtractor {
-  readonly languageIds = ["cpp"];
+  readonly languageIds = ["cpp", "c"];
 
   extractStructure(rootNode: TreeSitterNode): StructuralAnalysis {
     const functions: StructuralAnalysis["functions"] = [];

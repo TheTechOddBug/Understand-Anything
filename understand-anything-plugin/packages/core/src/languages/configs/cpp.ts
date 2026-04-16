@@ -2,8 +2,8 @@ import type { LanguageConfig } from "../types.js";
 
 export const cppConfig = {
   id: "cpp",
-  displayName: "C/C++",
-  extensions: [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp", ".hxx"],
+  displayName: "C++",
+  extensions: [".cpp", ".cc", ".cxx", ".hpp", ".hxx"],
   treeSitter: {
     wasmPackage: "tree-sitter-cpp",
     wasmFile: "tree-sitter-cpp.wasm",
@@ -21,7 +21,7 @@ export const cppConfig = {
     "STL containers",
   ],
   filePatterns: {
-    entryPoints: ["main.cpp", "main.c", "src/main.cpp"],
+    entryPoints: ["main.cpp", "src/main.cpp"],
     barrels: [],
     tests: ["*_test.cpp", "*_test.cc", "test_*.cpp"],
     config: ["CMakeLists.txt", "Makefile", "meson.build"],

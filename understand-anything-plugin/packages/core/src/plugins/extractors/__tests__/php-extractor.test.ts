@@ -583,6 +583,78 @@ function helper(string $x): string {
     });
   });
 
+  // ---- Block-scoped namespaces ----
+
+  describe("extractStructure - block-scoped namespaces", () => {
+    it("extracts classes and functions inside block-scoped namespaces", () => {
+      const { tree, parser, root } = parse(`<?php
+namespace App\\Controllers {
+    class UserController {
+        public function index(): void {}
+    }
+
+    function helperInNs(): string {
+        return "ok";
+    }
+}
+`);
+      const result = extractor.extractStructure(root);
+
+      expect(result.classes).toHaveLength(1);
+      expect(result.classes[0].name).toBe("UserController");
+      expect(result.classes[0].methods).toContain("index");
+
+      expect(result.functions.some((f) => f.name === "helperInNs")).toBe(true);
+      expect(result.functions.some((f) => f.name === "index")).toBe(true);
+
+      const exportNames = result.exports.map((e) => e.name);
+      expect(exportNames).toContain("UserController");
+      expect(exportNames).toContain("helperInNs");
+
+      tree.delete();
+      parser.delete();
+    });
+
+    it("extracts interfaces inside block-scoped namespaces", () => {
+      const { tree, parser, root } = parse(`<?php
+namespace App\\Contracts {
+    interface Repository {
+        public function find(int $id): mixed;
+    }
+}
+`);
+      const result = extractor.extractStructure(root);
+
+      expect(result.classes).toHaveLength(1);
+      expect(result.classes[0].name).toBe("Repository");
+      expect(result.classes[0].methods).toContain("find");
+
+      tree.delete();
+      parser.delete();
+    });
+
+    it("extracts use statements inside block-scoped namespaces", () => {
+      const { tree, parser, root } = parse(`<?php
+namespace App\\Services {
+    use App\\Models\\User;
+
+    class UserService {
+        public function get(): void {}
+    }
+}
+`);
+      const result = extractor.extractStructure(root);
+
+      expect(result.imports).toHaveLength(1);
+      expect(result.imports[0].source).toBe("App\\Models\\User");
+      expect(result.classes).toHaveLength(1);
+      expect(result.classes[0].name).toBe("UserService");
+
+      tree.delete();
+      parser.delete();
+    });
+  });
+
   // ---- Nullable return types ----
 
   describe("nullable return types", () => {

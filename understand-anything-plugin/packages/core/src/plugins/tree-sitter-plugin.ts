@@ -21,9 +21,10 @@ type TreeSitterNode = import("web-tree-sitter").Node;
  * Config-driven tree-sitter plugin.
  *
  * Accepts LanguageConfig objects to determine which languages to support
- * and how to load their WASM grammars. Currently provides deep structural
- * analysis for TypeScript/JavaScript; other languages with tree-sitter configs
- * get basic function/class/import extraction.
+ * and how to load their WASM grammars. Provides deep structural analysis
+ * (functions, classes, imports, exports, call graphs) for all languages
+ * with registered extractors: TypeScript, JavaScript, Python, Go, Rust,
+ * Java, Ruby, PHP, C/C++, and C#.
  *
  * Languages without tree-sitter configs are gracefully skipped (the LLM
  * agent handles analysis for those).
@@ -51,7 +52,7 @@ export class TreeSitterPlugin implements AnalyzerPlugin {
    * If no configs are provided, defaults to TypeScript and JavaScript.
    *
    * @param configs Language configurations to load
-   * @param extractors Optional language extractors; if none provided, registers TypeScriptExtractor by default
+   * @param extractors Optional language extractors; if none provided, registers all builtin extractors
    */
   constructor(configs?: LanguageConfig[], extractors?: LanguageExtractor[]) {
     if (configs) {

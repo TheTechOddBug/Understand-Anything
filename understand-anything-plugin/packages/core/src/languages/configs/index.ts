@@ -9,8 +9,10 @@ import { rubyConfig } from "./ruby.js";
 import { phpConfig } from "./php.js";
 import { swiftConfig } from "./swift.js";
 import { kotlinConfig } from "./kotlin.js";
+import { cConfig } from "./c.js";
 import { cppConfig } from "./cpp.js";
 import { csharpConfig } from "./csharp.js";
+import { luaConfig } from "./lua.js";
 // Non-code language configs
 import { markdownConfig } from "./markdown.js";
 import { yamlConfig } from "./yaml.js";
@@ -51,6 +53,8 @@ export const builtinLanguageConfigs: LanguageConfig[] = [
   phpConfig,
   swiftConfig,
   kotlinConfig,
+  luaConfig,
+  cConfig,
   cppConfig,
   csharpConfig,
   // Non-code languages
@@ -94,6 +98,8 @@ export {
   phpConfig,
   swiftConfig,
   kotlinConfig,
+  luaConfig,
+  cConfig,
   cppConfig,
   csharpConfig,
   // Non-code languages
