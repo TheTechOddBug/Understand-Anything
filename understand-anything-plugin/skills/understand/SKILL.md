@@ -29,10 +29,31 @@ Determine whether to run a full analysis or incremental update.
      - Verify the resolved path exists and is a directory (run `test -d <path>`). If it does not exist or is not a directory, report an error to the user and **STOP**.
      - Set `PROJECT_ROOT` to the resolved absolute path.
    - If no directory path argument is found, set `PROJECT_ROOT` to the current working directory.
-1.5. **Ensure the plugin is built.** Later phases invoke Node scripts that import `@understand-anything/core`. On a fresh install `packages/core/dist/` does not exist yet — build once. This skill file lives at `<PLUGIN_ROOT>/skills/understand/SKILL.md`, so the plugin root is two directories above it.
+1.5. **Ensure the plugin is built.** Later phases invoke Node scripts that import `@understand-anything/core`. On a fresh install `packages/core/dist/` does not exist yet — build once.
+
+   **Important:** do **not** assume the plugin root is simply two directories above the skill path string. In many installations `~/.agents/skills/understand` is a symlink into the real plugin checkout, so you must resolve the real path first and also prefer the universal plugin-root symlink when present.
+
+   Resolve the plugin root like this:
 
    ```bash
-   PLUGIN_ROOT="<two directories above this SKILL.md>"
+   SKILL_REAL=$(realpath ~/.agents/skills/understand 2>/dev/null || readlink -f ~/.agents/skills/understand 2>/dev/null || echo "")
+   SELF_RELATIVE=$([ -n "$SKILL_REAL" ] && cd "$SKILL_REAL/../.." 2>/dev/null && pwd || echo "")
+
+   PLUGIN_ROOT=""
+   for candidate in \
+     "$HOME/.understand-anything-plugin" \
+     "$SELF_RELATIVE"; do
+     if [ -n "$candidate" ] && [ -f "$candidate/package.json" ] && [ -f "$candidate/pnpm-workspace.yaml" ]; then
+       PLUGIN_ROOT="$candidate"
+       break
+     fi
+   done
+
+   if [ -z "$PLUGIN_ROOT" ]; then
+     echo "Error: Cannot find the understand-anything plugin root. Make sure the plugin is installed and that ~/.understand-anything-plugin exists."
+     exit 1
+   fi
+
    if [ ! -f "$PLUGIN_ROOT/packages/core/dist/index.js" ]; then
      cd "$PLUGIN_ROOT" && (pnpm install --frozen-lockfile 2>/dev/null || pnpm install) && pnpm --filter @understand-anything/core build
    fi
