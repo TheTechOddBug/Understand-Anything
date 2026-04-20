@@ -1,22 +1,18 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { validateGraph } from "@understand-anything/core/schema";
 import type { GraphIssue } from "@understand-anything/core/schema";
 import { useDashboardStore } from "./store";
 import GraphView from "./components/GraphView";
 import DomainGraphView from "./components/DomainGraphView";
 import KnowledgeGraphView from "./components/KnowledgeGraphView";
-import CodeViewer from "./components/CodeViewer";
 import SearchBar from "./components/SearchBar";
 import NodeInfo from "./components/NodeInfo";
 import LayerLegend from "./components/LayerLegend";
 import DiffToggle from "./components/DiffToggle";
 import FilterPanel from "./components/FilterPanel";
 import ExportMenu from "./components/ExportMenu";
-import PathFinderModal from "./components/PathFinderModal";
-import LearnPanel from "./components/LearnPanel";
 import PersonaSelector from "./components/PersonaSelector";
 import ProjectOverview from "./components/ProjectOverview";
-import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 import WarningBanner from "./components/WarningBanner";
 import TokenGate from "./components/TokenGate";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -24,6 +20,14 @@ import type { KeyboardShortcut } from "./hooks/useKeyboardShortcuts";
 import { ThemeProvider } from "./themes/index.ts";
 import { ThemePicker } from "./components/ThemePicker.tsx";
 import type { ThemeConfig } from "./themes/index.ts";
+
+// Lazy-load heavy / optional components so they ship in separate chunks.
+const CodeViewer = lazy(() => import("./components/CodeViewer"));
+const LearnPanel = lazy(() => import("./components/LearnPanel"));
+const PathFinderModal = lazy(() => import("./components/PathFinderModal"));
+const KeyboardShortcutsHelp = lazy(
+  () => import("./components/KeyboardShortcutsHelp"),
+);
 
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 const SESSION_TOKEN_KEY = "understand-anything-token";
@@ -321,7 +325,11 @@ function Dashboard({ accessToken }: { accessToken: string }) {
   const sidebarContent = (
     <>
       {selectedNodeId && <NodeInfo />}
-      {isLearnMode && <LearnPanel />}
+      {isLearnMode && (
+        <Suspense fallback={null}>
+          <LearnPanel />
+        </Suspense>
+      )}
       {!selectedNodeId && !isLearnMode && <ProjectOverview />}
     </>
   );
@@ -508,7 +516,9 @@ function Dashboard({ accessToken }: { accessToken: string }) {
                 </button>
               </div>
               <div className="flex-1 min-h-0">
-                <CodeViewer />
+                <Suspense fallback={null}>
+                  <CodeViewer />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -517,17 +527,20 @@ function Dashboard({ accessToken }: { accessToken: string }) {
 
       {/* Keyboard shortcuts help modal */}
       {showKeyboardHelp && (
-        <KeyboardShortcutsHelp
-          shortcuts={shortcuts}
-          onClose={() => setShowKeyboardHelp(false)}
-        />
+        <Suspense fallback={null}>
+          <KeyboardShortcutsHelp
+            shortcuts={shortcuts}
+            onClose={() => setShowKeyboardHelp(false)}
+          />
+        </Suspense>
       )}
 
-      {/* Path Finder Modal */}
-      <PathFinderModal
-        isOpen={pathFinderOpen}
-        onClose={togglePathFinder}
-      />
+      {/* Path Finder Modal — only mounted when open so its chunk is lazy-loaded on demand. */}
+      {pathFinderOpen && (
+        <Suspense fallback={null}>
+          <PathFinderModal isOpen={pathFinderOpen} onClose={togglePathFinder} />
+        </Suspense>
+      )}
     </div>
     </ThemeProvider>
   );
