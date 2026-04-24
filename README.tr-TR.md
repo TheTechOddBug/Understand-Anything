@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.jpg" alt="Understand Anything — Herhangi bir kod tabanını interaktif bir bilgi grafiğine dönüştür" width="800" />
+  <img src="assets/hero.png" alt="Understand Anything — Herhangi bir kod tabanını interaktif bir bilgi grafiğine dönüştür" width="800" />
 </p>
 
 ---

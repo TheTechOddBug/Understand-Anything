@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.jpg" alt="Understand Anything — Convierte cualquier código fuente en un grafo de conocimiento interactivo" width="800" />
+  <img src="assets/hero.png" alt="Understand Anything — Convierte cualquier código fuente en un grafo de conocimiento interactivo" width="800" />
 </p>
 
 ---

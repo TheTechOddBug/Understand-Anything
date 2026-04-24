@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.jpg" alt="Understand Anything — あらゆるコードベースをインタラクティブなナレッジグラフに変換" width="800" />
+  <img src="assets/hero.png" alt="Understand Anything — あらゆるコードベースをインタラクティブなナレッジグラフに変換" width="800" />
 </p>
 
 ---

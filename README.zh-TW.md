@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.jpg" alt="Understand Anything — 將任何程式碼庫轉換為互動式知識圖譜" width="800" />
+  <img src="assets/hero.png" alt="Understand Anything — 將任何程式碼庫轉換為互動式知識圖譜" width="800" />
 </p>
 
 ---

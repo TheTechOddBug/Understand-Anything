@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.jpg" alt="Understand Anything — 모든 코드베이스를 인터랙티브 지식 그래프로 변환" width="800" />
+  <img src="assets/hero.png" alt="Understand Anything — 모든 코드베이스를 인터랙티브 지식 그래프로 변환" width="800" />
 </p>
 
 ---
