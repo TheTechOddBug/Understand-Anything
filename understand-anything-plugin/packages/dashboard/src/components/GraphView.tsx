@@ -1109,54 +1109,66 @@ function useLayerDetailGraph() {
   // intra-container edges for each expanded container — these are stored
   // separately on topo.intraContainer (Stage 1 doesn't render them since
   // the children aren't visible there).
+  //
+  // Important: when only one side of an aggregated edge is expanded, the
+  // collapsed side MUST keep its container-atom id as the endpoint —
+  // otherwise React Flow would receive edges referencing file ids that
+  // aren't rendered (the collapsed container's children don't exist as
+  // nodes), and the edges would silently disappear. Multiple file→file
+  // edges that collapse to the same (collapsed-atom → expanded-file)
+  // pair are deduped.
   const expandedEdges = useMemo<Edge[]>(() => {
     if (expandedContainers.size === 0) return topo.edges;
 
     const out: Edge[] = [];
+    const seen = new Set<string>();
     for (const e of topo.edges) {
-      const srcExpanded = expandedContainers.has(String(e.source));
-      const tgtExpanded = expandedContainers.has(String(e.target));
+      const srcAtom = String(e.source);
+      const tgtAtom = String(e.target);
+      const srcExpanded = expandedContainers.has(srcAtom);
+      const tgtExpanded = expandedContainers.has(tgtAtom);
       if (!srcExpanded && !tgtExpanded) {
         out.push(e);
         continue;
       }
-      // Match by aggregated endpoints. nodeToContainer maps any file id
-      // (grouped or ungrouped) to its atom — the same key used to build
-      // the aggregated edges in Stage 1.
       const matching = topo.filteredEdges.filter((fe) => {
         const fsc = topo.nodeToContainer.get(fe.source);
         const ftc = topo.nodeToContainer.get(fe.target);
-        return fsc === e.source && ftc === e.target;
+        return fsc === srcAtom && ftc === tgtAtom;
       });
-      // Index suffix guards against parallel edges with identical
-      // (source, target, type) — schema doesn't enforce uniqueness on
-      // that triple, so two edges from the same agent run could otherwise
-      // collide in React Flow's edge map.
-      matching.forEach((m, idx) => {
+      for (const m of matching) {
+        const realSrc = srcExpanded ? m.source : srcAtom;
+        const realTgt = tgtExpanded ? m.target : tgtAtom;
+        const key = `${realSrc}|${realTgt}|${m.type}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         out.push({
-          id: `inflated-${m.source}-${m.target}-${m.type}-${idx}`,
-          source: m.source,
-          target: m.target,
+          id: `inflated-${key}`,
+          source: realSrc,
+          target: realTgt,
           label: m.type,
           style: { stroke: "rgba(212,165,116,0.5)", strokeWidth: 1.5 },
           labelStyle: { fill: "#a39787", fontSize: 10 },
         });
-      });
+      }
     }
     // Add intra-container edges for each expanded container so the user
     // can see the wiring between sibling files inside an expanded folder.
-    topo.intraContainer.forEach((e, idx) => {
+    for (const e of topo.intraContainer) {
       const cid = topo.nodeToContainer.get(e.source);
-      if (!cid || !expandedContainers.has(cid)) return;
+      if (!cid || !expandedContainers.has(cid)) continue;
+      const key = `intra|${e.source}|${e.target}|${e.type}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       out.push({
-        id: `intra-${e.source}-${e.target}-${e.type}-${idx}`,
+        id: key,
         source: e.source,
         target: e.target,
         label: e.type,
         style: { stroke: "rgba(212,165,116,0.5)", strokeWidth: 1.5 },
         labelStyle: { fill: "#a39787", fontSize: 10 },
       });
-    });
+    }
     return out;
   }, [
     topo.edges,
@@ -1243,13 +1255,25 @@ function GraphViewInner() {
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
 
-  // Fit view on level/layer transitions
+  // Fit view on level/layer transitions. Layout is async (~125ms+ for
+  // medium layers), so a fixed-delay timer can fire before positions
+  // arrive and leave the viewport on the previous layer. Instead, mark
+  // a pending fit on navigation and run it when nodes actually populate.
+  const pendingFitRef = useRef(false);
   useEffect(() => {
-    const timer = setTimeout(() => {
+    pendingFitRef.current = true;
+  }, [navigationLevel, activeLayerId]);
+
+  useEffect(() => {
+    if (!pendingFitRef.current) return;
+    if (nodes.length === 0) return;
+    pendingFitRef.current = false;
+    // One frame so React Flow has positioned the nodes before fit.
+    const raf = requestAnimationFrame(() => {
       fitView({ duration: 400, padding: 0.2 });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [navigationLevel, activeLayerId, fitView]);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [nodes, fitView]);
 
   // ── Auto-expand triggers (Task 13) ─────────────────────────────────────
   // Only meaningful in layer-detail; in overview mode there are no
