@@ -170,6 +170,9 @@ interface DashboardStore {
   clearContainerLayouts: () => void;
 
   containerSizeMemory: Map<string, { width: number; height: number }>;
+
+  stage1Tick: number;
+  bumpStage1Tick: () => void;
 }
 
 function getSortedTour(graph: KnowledgeGraph): TourStep[] {
@@ -257,6 +260,7 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
       containerLayoutCache: new Map(),
       expandedContainers: new Set(),
       containerSizeMemory: new Map(),
+      stage1Tick: 0,
     });
   },
 
@@ -577,4 +581,7 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
     set({ containerLayoutCache: new Map(), expandedContainers: new Set() }),
 
   containerSizeMemory: new Map(),
+
+  stage1Tick: 0,
+  bumpStage1Tick: () => set((s) => ({ stage1Tick: s.stage1Tick + 1 })),
 }));

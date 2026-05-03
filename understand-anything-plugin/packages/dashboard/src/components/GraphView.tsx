@@ -569,6 +569,11 @@ function useLayerDetailTopology(): LayerDetailTopology {
   ]);
 
   // ── Async ELK Stage 1 layout ────────────────────────────────────────────
+  // `stage1Tick` is bumped by the Stage 2 effect when an actual container
+  // size deviates >20% from the Stage 1 estimate — it forces this effect
+  // to re-run with the now-cached actual size in containerSizeMemory so
+  // surrounding atoms reflow into the correct positions.
+  const stage1Tick = useDashboardStore((s) => s.stage1Tick);
   const [topology, setTopology] = useState<LayerDetailTopology>(EMPTY_TOPOLOGY);
 
   useEffect(() => {
@@ -592,12 +597,23 @@ function useLayerDetailTopology(): LayerDetailTopology {
 
     // Build Stage 1 ELK input: containers as opaque atoms + ungrouped files
     // + portals, all at the top level.
+    //
+    // Read containerSizeMemory at effect-run time so that a Stage 2-driven
+    // re-layout (via `stage1Tick`) picks up the freshly measured actual
+    // size and routes around the now-correctly-sized atom. The structural
+    // memo intentionally does NOT depend on `stage1Tick` (avoids rebuilding
+    // the entire layer's structural state), so we override widths from
+    // size memory here.
+    const sizeMemoryAtRun = useDashboardStore.getState().containerSizeMemory;
     const stage1Children: ElkChild[] = [
-      ...containerFlowNodes.map((cn) => ({
-        id: cn.id,
-        width: cn.width ?? NODE_WIDTH,
-        height: cn.height ?? NODE_HEIGHT,
-      })),
+      ...containerFlowNodes.map((cn) => {
+        const memo = sizeMemoryAtRun.get(cn.id);
+        return {
+          id: cn.id,
+          width: memo?.width ?? cn.width ?? NODE_WIDTH,
+          height: memo?.height ?? cn.height ?? NODE_HEIGHT,
+        };
+      }),
       ...ungroupedFlowNodes.map((un) => ({
         id: un.id,
         width: NODE_WIDTH,
@@ -663,7 +679,7 @@ function useLayerDetailTopology(): LayerDetailTopology {
     return () => {
       cancelled = true;
     };
-  }, [built]);
+  }, [built, stage1Tick]);
 
   // ── Stage 2: lazy per-container layout on expand ───────────────────────
   // Watches expandedContainers and computes ELK on each newly-expanded
@@ -673,6 +689,7 @@ function useLayerDetailTopology(): LayerDetailTopology {
   const expandedContainers = useDashboardStore((s) => s.expandedContainers);
   const containerLayoutCache = useDashboardStore((s) => s.containerLayoutCache);
   const setContainerLayout = useDashboardStore((s) => s.setContainerLayout);
+  const bumpStage1Tick = useDashboardStore((s) => s.bumpStage1Tick);
 
   const stage2Containers = topology.containers;
   const stage2Intra = topology.intraContainer;
@@ -685,6 +702,11 @@ function useLayerDetailTopology(): LayerDetailTopology {
     if (toCompute.length === 0) return;
 
     let cancelled = false;
+    // Capture sizeMemory BEFORE any setContainerLayout writes so the
+    // deviation check below compares against the size Stage 1 actually
+    // used. (setContainerLayout overwrites containerSizeMemory with the
+    // new actualSize.)
+    const sizeMemoryBefore = useDashboardStore.getState().containerSizeMemory;
     Promise.all(
       toCompute.map(async (containerId) => {
         const c = stage2Containers.find((cc) => cc.id === containerId);
@@ -730,7 +752,27 @@ function useLayerDetailTopology(): LayerDetailTopology {
           }
           // Pad for container chrome (header + border)
           const actualSize = { width: maxX + 40, height: maxY + 60 };
-          return { containerId, childPositions, actualSize };
+
+          // Recompute the Stage 1 estimate for this container using the
+          // SAME formula `built` used so we know what Stage 1 actually
+          // routed against. (Memo if present, else sqrt-clamped estimate.)
+          const memo = sizeMemoryBefore.get(containerId);
+          const STAGE1_MAX_W = 800;
+          const STAGE1_MAX_H = 600;
+          const stage1Width = memo?.width
+            ?? Math.min(
+              STAGE1_MAX_W,
+              Math.max(NODE_WIDTH, Math.sqrt(c.nodeIds.length) * NODE_WIDTH * 1.2),
+            );
+          const stage1Height = memo?.height
+            ?? Math.min(
+              STAGE1_MAX_H,
+              Math.max(NODE_HEIGHT, Math.sqrt(c.nodeIds.length) * NODE_HEIGHT * 1.2),
+            );
+          const dw = Math.abs(actualSize.width - stage1Width) / stage1Width;
+          const dh = Math.abs(actualSize.height - stage1Height) / stage1Height;
+          const deviated = dw > 0.2 || dh > 0.2;
+          return { containerId, childPositions, actualSize, deviated };
         } catch (err) {
           console.error(`[Stage 2 ${containerId}] layout failed:`, err);
           return null;
@@ -738,10 +780,18 @@ function useLayerDetailTopology(): LayerDetailTopology {
       }),
     ).then((results) => {
       if (cancelled) return;
+      let anyDeviated = false;
       for (const r of results) {
         if (!r) continue;
         setContainerLayout(r.containerId, r.childPositions, r.actualSize);
+        if (r.deviated) anyDeviated = true;
       }
+      // Only bump if at least one container's actual size differed >20%
+      // from its Stage 1 estimate. Bumping unconditionally would loop:
+      // Stage 1 → Stage 2 → bump → Stage 1 → ... With the >20% gate,
+      // after the re-layout containerSizeMemory holds the actual size, so
+      // the next Stage 2 sees a 0% deviation and the loop terminates.
+      if (anyDeviated) bumpStage1Tick();
     });
 
     return () => {
@@ -753,6 +803,7 @@ function useLayerDetailTopology(): LayerDetailTopology {
     stage2Intra,
     containerLayoutCache,
     setContainerLayout,
+    bumpStage1Tick,
   ]);
 
   return topology;
