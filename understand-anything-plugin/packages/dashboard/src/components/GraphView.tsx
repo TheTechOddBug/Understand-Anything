@@ -314,6 +314,14 @@ function useLayerDetailTopology(): LayerDetailTopology {
     [selectNode],
   );
 
+  // Stable across renders so ContainerNode's memo() actually short-circuits.
+  // Reading toggleContainer via getState() avoids subscribing this hook to
+  // expandedContainers — Stage 1 must not relayout on expand.
+  const handleContainerToggle = useCallback(
+    (id: string) => useDashboardStore.getState().toggleContainer(id),
+    [],
+  );
+
   // ── Structural build (synchronous): filtering + containers + nodes/edges
   // pre-layout. Re-runs whenever the inputs that drive container derivation
   // change. The only async piece is the ELK call below.
@@ -403,14 +411,25 @@ function useLayerDetailTopology(): LayerDetailTopology {
       nodeToContainer,
     );
 
-    // Container size estimate (size memory takes priority)
+    // Container size estimate (size memory takes priority).
+    // Caps prevent first-paint sprawl: at 100 children sqrt() yields
+    // ~3360px which renders as a huge empty box pre-expansion. Stage 2
+    // sets the actual size once it's measured, and Task 15 re-flows.
+    const STAGE1_MAX_CONTAINER_WIDTH = 800;
+    const STAGE1_MAX_CONTAINER_HEIGHT = 600;
     const sizeMemory = useDashboardStore.getState().containerSizeMemory;
-    const containerWidth = (c: DerivedContainer) =>
-      sizeMemory.get(c.id)?.width ??
-      Math.max(NODE_WIDTH, Math.sqrt(c.nodeIds.length) * NODE_WIDTH * 1.2);
-    const containerHeight = (c: DerivedContainer) =>
-      sizeMemory.get(c.id)?.height ??
-      Math.max(NODE_HEIGHT, Math.sqrt(c.nodeIds.length) * NODE_HEIGHT * 1.2);
+    const containerWidth = (c: DerivedContainer) => {
+      const memo = sizeMemory.get(c.id)?.width;
+      if (memo) return memo;
+      const estimate = Math.sqrt(c.nodeIds.length) * NODE_WIDTH * 1.2;
+      return Math.min(STAGE1_MAX_CONTAINER_WIDTH, Math.max(NODE_WIDTH, estimate));
+    };
+    const containerHeight = (c: DerivedContainer) => {
+      const memo = sizeMemory.get(c.id)?.height;
+      if (memo) return memo;
+      const estimate = Math.sqrt(c.nodeIds.length) * NODE_HEIGHT * 1.2;
+      return Math.min(STAGE1_MAX_CONTAINER_HEIGHT, Math.max(NODE_HEIGHT, estimate));
+    };
 
     // Build container flow nodes (children NOT rendered yet — Task 12)
     const containerFlowNodes: ContainerFlowNode[] = containers.map((c, idx) => ({
@@ -429,7 +448,7 @@ function useLayerDetailTopology(): LayerDetailTopology {
         hasSearchHits: false,
         isDiffAffected: false, // Task 14 will populate this
         isFocusedViaChild: false,
-        onToggle: (id: string) => useDashboardStore.getState().toggleContainer(id),
+        onToggle: handleContainerToggle,
       },
     }));
 
@@ -546,6 +565,7 @@ function useLayerDetailTopology(): LayerDetailTopology {
     nodeTypeFilters,
     drillIntoLayer,
     handleNodeSelect,
+    handleContainerToggle,
   ]);
 
   // ── Async ELK Stage 1 layout ────────────────────────────────────────────
@@ -781,7 +801,14 @@ function buildCustomFlowNode(
 
 /**
  * Visual overlay: cheap O(n) pass that applies selection, search, and tour
- * state onto already-positioned nodes. Avoids triggering dagre relayout.
+ * state onto already-positioned nodes. Avoids triggering ELK relayout.
+ *
+ * TODO(Task 14): selection neighbor highlighting currently walks raw graph
+ * edges with file-id endpoints. When a neighbor lives inside a collapsed
+ * container, its container atom should still light up (via
+ * isFocusedViaChild) — but today it doesn't, because the neighbor set
+ * is keyed by file ids. Map neighbors through nodeToContainer when
+ * applying overlays to container nodes.
  *
  * Also folds in Stage 2 outputs:
  *   - Expanded children are emitted as React Flow children (`parentId` +
