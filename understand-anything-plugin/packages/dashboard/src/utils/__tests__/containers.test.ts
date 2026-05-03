@@ -1,0 +1,89 @@
+import { describe, it, expect } from "vitest";
+import { deriveContainers } from "../containers";
+import type { GraphNode } from "@understand-anything/core/types";
+
+function node(id: string, filePath?: string): GraphNode {
+  return {
+    id,
+    type: "file",
+    name: id,
+    filePath,
+    summary: "",
+    complexity: "simple",
+  } as GraphNode;
+}
+
+describe("deriveContainers — folder strategy", () => {
+  it("groups nodes by first folder segment after LCP", () => {
+    const nodes = [
+      node("a", "src/auth/login.go"),
+      node("b", "src/auth/oauth.go"),
+      node("c", "src/cart/cart.go"),
+      node("d", "src/cart/checkout.go"),
+    ];
+    const { containers, ungrouped } = deriveContainers(nodes, []);
+    expect(ungrouped).toEqual([]);
+    expect(containers).toHaveLength(2);
+    const names = containers.map((c) => c.name).sort();
+    expect(names).toEqual(["auth", "cart"]);
+    const auth = containers.find((c) => c.name === "auth")!;
+    expect(auth.strategy).toBe("folder");
+    expect(auth.nodeIds.sort()).toEqual(["a", "b"]);
+  });
+
+  it("strips deep LCP", () => {
+    const nodes = [
+      node("a", "monorepo/backend/src/auth/login.go"),
+      node("b", "monorepo/backend/src/cart/cart.go"),
+    ];
+    const { containers } = deriveContainers(nodes, []);
+    const names = containers.map((c) => c.name).sort();
+    expect(names).toEqual(["auth", "cart"]);
+  });
+
+  it("collapses nested folders into the first segment", () => {
+    const nodes = [
+      node("a", "auth/handlers/oauth.go"),
+      node("b", "auth/services/token.go"),
+      node("c", "cart/cart.go"),
+    ];
+    const { containers } = deriveContainers(nodes, []);
+    expect(containers.find((c) => c.name === "auth")?.nodeIds.sort()).toEqual(["a", "b"]);
+  });
+
+  it("places nodes without filePath in '~' container", () => {
+    const nodes = [
+      node("a", "auth/login.go"),
+      node("b", "auth/oauth.go"),
+      node("c"),
+      node("d"),
+    ];
+    const { containers } = deriveContainers(nodes, []);
+    expect(containers.find((c) => c.name === "~")?.nodeIds.sort()).toEqual(["c", "d"]);
+  });
+
+  it("suppresses single-child containers (single child becomes ungrouped)", () => {
+    const nodes = [
+      node("a", "auth/login.go"),
+      node("b", "auth/oauth.go"),
+      node("c", "cart/cart.go"),
+    ];
+    const { containers, ungrouped } = deriveContainers(nodes, []);
+    // 'cart' has only 1 child → suppressed
+    expect(containers.find((c) => c.name === "cart")).toBeUndefined();
+    expect(ungrouped).toContain("c");
+    // 'auth' kept
+    expect(containers.find((c) => c.name === "auth")?.nodeIds.sort()).toEqual(["a", "b"]);
+  });
+
+  it("returns flat (no containers) when total nodes < 8", () => {
+    const nodes = [
+      node("a", "auth/x.go"),
+      node("b", "cart/y.go"),
+      node("c", "logs/z.go"),
+    ];
+    const { containers, ungrouped } = deriveContainers(nodes, []);
+    expect(containers).toHaveLength(0);
+    expect(ungrouped.sort()).toEqual(["a", "b", "c"]);
+  });
+});
