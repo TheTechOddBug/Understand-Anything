@@ -854,12 +854,9 @@ function buildCustomFlowNode(
  * Visual overlay: cheap O(n) pass that applies selection, search, and tour
  * state onto already-positioned nodes. Avoids triggering ELK relayout.
  *
- * TODO(Task 14): selection neighbor highlighting currently walks raw graph
- * edges with file-id endpoints. When a neighbor lives inside a collapsed
- * container, its container atom should still light up (via
- * isFocusedViaChild) — but today it doesn't, because the neighbor set
- * is keyed by file ids. Map neighbors through nodeToContainer when
- * applying overlays to container nodes.
+ * Container atoms whose children are focused or selected light up via
+ * `isFocusedViaChild` — neighbor sets are mapped through `nodeToContainer`
+ * so collapsed containers still show the relationship.
  *
  * Also folds in Stage 2 outputs:
  *   - Expanded children are emitted as React Flow children (`parentId` +

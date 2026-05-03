@@ -227,12 +227,35 @@ export function mergeElkPositions<T extends Node>(
   nodes: T[],
   positioned: ElkInput,
 ): T[] {
-  const posMap = new Map<string, { x: number; y: number }>();
+  const positionedMap = new Map<
+    string,
+    { x: number; y: number; width?: number; height?: number }
+  >();
   for (const c of positioned.children ?? []) {
-    posMap.set(c.id, { x: c.x ?? 0, y: c.y ?? 0 });
+    positionedMap.set(c.id, {
+      x: c.x ?? 0,
+      y: c.y ?? 0,
+      width: c.width,
+      height: c.height,
+    });
   }
-  return nodes.map((n) => ({
-    ...n,
-    position: posMap.get(n.id) ?? n.position ?? { x: 0, y: 0 },
-  }));
+  return nodes.map((n) => {
+    const merged = positionedMap.get(n.id);
+    if (!merged) {
+      return {
+        ...n,
+        position: n.position ?? { x: 0, y: 0 },
+      };
+    }
+    // Propagate width/height for container nodes so a tick-driven
+    // Stage 1 re-layout (Task 15) can resize the visible atom to match
+    // the actual Stage 2 footprint. ELK echoes back the same width/height
+    // we passed in for non-container nodes, so this is a no-op for them.
+    return {
+      ...n,
+      position: { x: merged.x, y: merged.y },
+      ...(merged.width != null ? { width: merged.width } : {}),
+      ...(merged.height != null ? { height: merged.height } : {}),
+    };
+  });
 }
