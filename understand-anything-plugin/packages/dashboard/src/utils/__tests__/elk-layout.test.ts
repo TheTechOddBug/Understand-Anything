@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { repairElkInput, type ElkInput } from "../elk-layout";
+import { applyElkLayout, repairElkInput, type ElkInput } from "../elk-layout";
 
 describe("repairElkInput", () => {
   it("ensures node dimensions when missing", () => {
@@ -68,5 +68,39 @@ describe("repairElkInput", () => {
       edges: [],
     };
     expect(() => repairElkInput(input, { strict: true })).toThrow(/dimensions/);
+  });
+});
+
+describe("applyElkLayout", () => {
+  it("lays out a small graph and returns positions", async () => {
+    const result = await applyElkLayout({
+      id: "root",
+      children: [
+        { id: "a", width: 100, height: 50 },
+        { id: "b", width: 100, height: 50 },
+      ],
+      edges: [{ id: "e1", sources: ["a"], targets: ["b"] }],
+      layoutOptions: { algorithm: "layered", "elk.direction": "DOWN" },
+    });
+    expect(result.issues).toEqual([]);
+    expect(result.positioned.children).toHaveLength(2);
+    for (const c of result.positioned.children) {
+      expect(typeof (c as { x?: number }).x).toBe("number");
+      expect(typeof (c as { y?: number }).y).toBe("number");
+    }
+  });
+
+  it("returns fatal issue when ELK rejects (without throwing in non-strict)", async () => {
+    // Force ELK rejection by giving an invalid algorithm
+    const result = await applyElkLayout(
+      {
+        id: "root",
+        children: [{ id: "a", width: 1, height: 1 }],
+        edges: [],
+        layoutOptions: { algorithm: "this-algorithm-does-not-exist" },
+      },
+      { strict: false },
+    );
+    expect(result.issues.some((i) => i.level === "fatal")).toBe(true);
   });
 });
