@@ -158,9 +158,9 @@ Create `understand-anything-plugin/packages/dashboard/src/utils/__tests__/contai
 ```ts
 import { describe, it, expect } from "vitest";
 import { deriveContainers } from "../containers";
-import type { KnowledgeGraphNode, KnowledgeGraphEdge } from "@understand-anything/core/types";
+import type { GraphNode, GraphEdge } from "@understand-anything/core/types";
 
-function node(id: string, filePath?: string): KnowledgeGraphNode {
+function node(id: string, filePath?: string): GraphNode {
   return {
     id,
     type: "file",
@@ -168,7 +168,7 @@ function node(id: string, filePath?: string): KnowledgeGraphNode {
     filePath,
     summary: "",
     complexity: "simple",
-  } as KnowledgeGraphNode;
+  } as GraphNode;
 }
 
 describe("deriveContainers — folder strategy", () => {
@@ -261,8 +261,8 @@ Create `understand-anything-plugin/packages/dashboard/src/utils/containers.ts`:
 
 ```ts
 import type {
-  KnowledgeGraphNode,
-  KnowledgeGraphEdge,
+  GraphNode,
+  GraphEdge,
 } from "@understand-anything/core/types";
 import { detectCommunities } from "./louvain";
 
@@ -303,7 +303,7 @@ function firstSegment(path: string): string {
 }
 
 function groupByFolder(
-  nodes: KnowledgeGraphNode[],
+  nodes: GraphNode[],
 ): { groups: Map<string, string[]>; rooted: string[] } {
   const withPath = nodes.filter((n) => n.filePath);
   const lcp = commonPrefix(withPath.map((n) => n.filePath!));
@@ -338,8 +338,8 @@ function shouldFallbackToCommunity(
 }
 
 export function deriveContainers(
-  nodes: KnowledgeGraphNode[],
-  edges: KnowledgeGraphEdge[],
+  nodes: GraphNode[],
+  edges: GraphEdge[],
 ): DeriveResult {
   if (nodes.length < MIN_LAYER_SIZE_FOR_GROUPING) {
     return { containers: [], ungrouped: nodes.map((n) => n.id) };
@@ -404,12 +404,12 @@ export function deriveContainers(
 Create `understand-anything-plugin/packages/dashboard/src/utils/louvain.ts`:
 
 ```ts
-import type { KnowledgeGraphEdge } from "@understand-anything/core/types";
+import type { GraphEdge } from "@understand-anything/core/types";
 
 /** Returns [nodeId, communityId] for every node provided. */
 export function detectCommunities(
   _nodeIds: string[],
-  _edges: KnowledgeGraphEdge[],
+  _edges: GraphEdge[],
 ): Map<string, number> {
   // Real implementation arrives in Task 3. Stub: every node in community 0.
   const m = new Map<string, number>();
@@ -454,15 +454,15 @@ describe("deriveContainers — community fallback", () => {
       node(`n${i}`, `services/n${i}.go`),
     );
     // Two clusters of 5 nodes; densely connected within, no edges between
-    const edges: KnowledgeGraphEdge[] = [];
+    const edges: GraphEdge[] = [];
     for (const i of [0, 1, 2, 3, 4]) {
       for (const j of [0, 1, 2, 3, 4]) {
-        if (i !== j) edges.push({ source: `n${i}`, target: `n${j}`, type: "calls" } as KnowledgeGraphEdge);
+        if (i !== j) edges.push({ source: `n${i}`, target: `n${j}`, type: "calls" } as GraphEdge);
       }
     }
     for (const i of [5, 6, 7, 8, 9]) {
       for (const j of [5, 6, 7, 8, 9]) {
-        if (i !== j) edges.push({ source: `n${i}`, target: `n${j}`, type: "calls" } as KnowledgeGraphEdge);
+        if (i !== j) edges.push({ source: `n${i}`, target: `n${j}`, type: "calls" } as GraphEdge);
       }
     }
     const { containers } = deriveContainers(nodes, edges);
@@ -500,7 +500,7 @@ Overwrite `understand-anything-plugin/packages/dashboard/src/utils/louvain.ts`:
 ```ts
 import Graph from "graphology";
 import louvain from "graphology-communities-louvain";
-import type { KnowledgeGraphEdge } from "@understand-anything/core/types";
+import type { GraphEdge } from "@understand-anything/core/types";
 
 /**
  * Run Louvain community detection over the provided node set and the
@@ -510,7 +510,7 @@ import type { KnowledgeGraphEdge } from "@understand-anything/core/types";
  */
 export function detectCommunities(
   nodeIds: string[],
-  edges: KnowledgeGraphEdge[],
+  edges: GraphEdge[],
 ): Map<string, number> {
   const ids = new Set(nodeIds);
   const g = new Graph({ type: "undirected", multi: false });
@@ -570,10 +570,10 @@ Create `understand-anything-plugin/packages/dashboard/src/utils/__tests__/edgeAg
 ```ts
 import { describe, it, expect } from "vitest";
 import { aggregateContainerEdges } from "../edgeAggregation";
-import type { KnowledgeGraphEdge } from "@understand-anything/core/types";
+import type { GraphEdge } from "@understand-anything/core/types";
 
-const ce = (source: string, target: string, type: string = "calls"): KnowledgeGraphEdge =>
-  ({ source, target, type }) as KnowledgeGraphEdge;
+const ce = (source: string, target: string, type: string = "calls"): GraphEdge =>
+  ({ source, target, type }) as GraphEdge;
 
 describe("aggregateContainerEdges", () => {
   it("returns empty arrays for empty input", () => {
@@ -644,7 +644,7 @@ Expected: import error — `aggregateContainerEdges` not exported.
 Append to `understand-anything-plugin/packages/dashboard/src/utils/edgeAggregation.ts`:
 
 ```ts
-import type { KnowledgeGraphEdge } from "@understand-anything/core/types";
+import type { GraphEdge } from "@understand-anything/core/types";
 
 export interface AggregatedContainerEdge {
   sourceContainerId: string;
@@ -654,7 +654,7 @@ export interface AggregatedContainerEdge {
 }
 
 export interface ContainerEdgeBuckets {
-  intraContainer: KnowledgeGraphEdge[];
+  intraContainer: GraphEdge[];
   interContainerAggregated: AggregatedContainerEdge[];
 }
 
@@ -667,10 +667,10 @@ export interface ContainerEdgeBuckets {
  * are dropped (treat them as pre-filtered).
  */
 export function aggregateContainerEdges(
-  edges: KnowledgeGraphEdge[],
+  edges: GraphEdge[],
   nodeToContainer: Map<string, string>,
 ): ContainerEdgeBuckets {
-  const intra: KnowledgeGraphEdge[] = [];
+  const intra: GraphEdge[] = [];
   const interMap = new Map<
     string,
     {
@@ -1680,7 +1680,7 @@ useEffect(() => {
     // Ungrouped (top-level files outside any container) — keep existing flow node logic for these
     const ungroupedFlowNodes = ungrouped
       .map((id) => filteredGraphNodes.find((n) => n.id === id))
-      .filter((n): n is KnowledgeGraphNode => n != null)
+      .filter((n): n is GraphNode => n != null)
       .map((node) => buildCustomFlowNode(node, /* helpers */));
     // (positioned.children also has positions for ungrouped ids)
     for (const ufn of ungroupedFlowNodes) {
@@ -1718,7 +1718,7 @@ useEffect(() => {
 return topology;
 ```
 
-The helper `buildCustomFlowNode` is the existing inline logic that converts a `KnowledgeGraphNode` into the existing `CustomFlowNode` shape — extract it from the current code (the same data fields populated for `flowNodes`).
+The helper `buildCustomFlowNode` is the existing inline logic that converts a `GraphNode` into the existing `CustomFlowNode` shape — extract it from the current code (the same data fields populated for `flowNodes`).
 
 - [ ] **Step 5: Manual smoke**
 

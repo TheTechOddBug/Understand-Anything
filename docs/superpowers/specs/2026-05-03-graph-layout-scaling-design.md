@@ -92,8 +92,8 @@ This matches the existing `useLayerDetailTopology` / `useLayerDetailGraph` split
 Triggered when **any** of:
 
 - All nodes share the same single folder after LCP stripping.
-- Folder count `< 3`.
-- Single folder holds `> 60%` of nodes.
+- Bucket count (folders + rooted) `< 2`.
+- Any single bucket (folder or rooted) holds `> 70%` of nodes.
 
 Run Louvain modularity-based community detection on the layer's internal edges. Each community becomes a container. Names are placeholders (`Cluster A`, `Cluster B`, ...) since no semantic name is available.
 
@@ -103,17 +103,16 @@ Implementation: use `graphology` + `graphology-communities-louvain` (~30KB total
 
 | Case | Behavior |
 |---|---|
-| Container has 1 child | No container box rendered; child becomes a top-level node in Stage 1 layout |
+| Container has 1 child (only when layer total ≥ 3) | No container box rendered; child becomes a top-level node in Stage 1 layout |
 | Container has 2 children | Container rendered; label dimmed |
-| Layer total nodes `< 8` | No grouping at all; ELK lays out flat |
 | All nodes lack `filePath` | All go to `~` container; if it would become single-child, fall back to flat |
 
 ### 2.4 Function signature
 
 ```ts
 function deriveContainers(
-  nodes: KnowledgeGraphNode[],
-  edges: KnowledgeGraphEdge[],
+  nodes: GraphNode[],
+  edges: GraphEdge[],
 ): {
   containers: Array<{
     id: string;                        // e.g. "container:auth" or "container:cluster-0"
@@ -220,8 +219,8 @@ Performed inside `buildCompoundGraph()`, before either ELK stage.
 
 ```ts
 function aggregateContainerEdges(
-  nodes: KnowledgeGraphNode[],
-  edges: KnowledgeGraphEdge[],
+  nodes: GraphNode[],
+  edges: GraphEdge[],
   nodeToContainer: Map<string, string>,
 ): {
   intraContainer: Edge[];                       // preserved as-is
@@ -459,7 +458,7 @@ packages/dashboard/src/
 
 | Type | Target | Cases |
 |---|---|---|
-| Unit | `deriveContainers` | folder grouping happy path; all-in-root fallback; <3 folders fallback; >60% concentration fallback; no-`filePath` nodes; single-child container suppression; layer < 8 flat output |
+| Unit | `deriveContainers` | folder grouping happy path; all-in-root fallback; <2 buckets fallback; >70% concentration fallback; no-`filePath` nodes; single-child container suppression (gated by layer ≥ 3) |
 | Unit | `aggregateContainerEdges` | empty edges; multiple same-direction edges merge; bidirectional edges split; intra + inter mix; types deduped |
 | Unit | `repairElkInput` | each repair function in isolation; validates correct `GraphIssue` level emitted |
 | Unit | `runElk` | minimal valid input; dev-mode strict throw; production graceful fatal; cancellation on dependency change |
