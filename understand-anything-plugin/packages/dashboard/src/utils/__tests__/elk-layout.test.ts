@@ -85,8 +85,8 @@ describe("applyElkLayout", () => {
     expect(result.issues).toEqual([]);
     expect(result.positioned.children).toHaveLength(2);
     for (const c of result.positioned.children) {
-      expect(typeof (c as { x?: number }).x).toBe("number");
-      expect(typeof (c as { y?: number }).y).toBe("number");
+      expect(typeof c.x).toBe("number");
+      expect(typeof c.y).toBe("number");
     }
   });
 

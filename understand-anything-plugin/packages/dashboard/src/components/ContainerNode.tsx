@@ -18,11 +18,11 @@ export interface ContainerNodeData extends Record<string, unknown> {
 
 export type ContainerFlowNode = Node<ContainerNodeData, "container">;
 
-const ContainerNode = memo(({ data, width, height }: NodeProps<ContainerFlowNode>) => {
+function ContainerNodeComponent({ data, width, height }: NodeProps<ContainerFlowNode>) {
   const color = getLayerColor(data.colorIndex);
 
   const borderColor = data.isDiffAffected
-    ? "rgba(224,82,82,0.5)"
+    ? "var(--color-diff-changed)"
     : data.isExpanded || data.isFocusedViaChild
       ? "rgba(212,165,116,0.6)"
       : "rgba(212,165,116,0.25)";
@@ -31,9 +31,18 @@ const ContainerNode = memo(({ data, width, height }: NodeProps<ContainerFlowNode
   const labelDimmed = data.name === "~";
   const labelText = labelDimmed ? "(root)" : data.name;
 
+  const handleToggle = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    data.onToggle(data.containerId);
+  };
+
   return (
     <div
-      className="rounded-xl cursor-pointer transition-all"
+      role="button"
+      tabIndex={0}
+      aria-expanded={data.isExpanded}
+      aria-label={`${labelText} container, ${data.childCount} item${data.childCount !== 1 ? "s" : ""}, ${data.isExpanded ? "expanded" : "collapsed"}`}
+      className="rounded-xl cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[rgba(212,165,116,0.6)]"
       style={{
         width,
         height,
@@ -41,17 +50,19 @@ const ContainerNode = memo(({ data, width, height }: NodeProps<ContainerFlowNode
         border: `${borderWidth}px solid ${borderColor}`,
         position: "relative",
       }}
-      onClick={(e) => {
-        e.stopPropagation();
-        data.onToggle(data.containerId);
+      onClick={handleToggle}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleToggle(e);
+        }
       }}
     >
       <div
-        className="flex items-center justify-between"
+        className="flex items-center justify-between font-serif"
         style={{
           padding: "12px 16px",
           color: color.label,
-          fontFamily: '"DM Serif Display", serif',
           fontSize: 14,
           fontWeight: 400,
         }}
@@ -62,17 +73,19 @@ const ContainerNode = memo(({ data, width, height }: NodeProps<ContainerFlowNode
         >
           {data.isExpanded && <span style={{ fontSize: 10 }}>▾</span>}
           {labelText}
-          {data.hasSearchHits && data.searchHitCount && data.searchHitCount > 0 && (
+          {data.searchHitCount != null && data.searchHitCount > 0 && (
             <span
+              className="font-mono"
               style={{
                 marginLeft: 6,
                 fontSize: 10,
                 background: "rgba(212,165,116,0.2)",
+                color: "var(--color-gold, #d4a574)",
                 padding: "1px 6px",
                 borderRadius: 8,
               }}
             >
-              🔍 {data.searchHitCount}
+              {data.searchHitCount} hit{data.searchHitCount !== 1 ? "s" : ""}
             </span>
           )}
         </span>
@@ -80,6 +93,9 @@ const ContainerNode = memo(({ data, width, height }: NodeProps<ContainerFlowNode
       </div>
     </div>
   );
-});
+}
+
+const ContainerNode = memo(ContainerNodeComponent);
+ContainerNode.displayName = "ContainerNode";
 
 export default ContainerNode;
