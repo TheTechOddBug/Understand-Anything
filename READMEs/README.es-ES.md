@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="../README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.png" alt="Understand Anything — Convierte cualquier código fuente en un grafo de conocimiento interactivo" width="800" />
+  <img src="../assets/hero.png" alt="Understand Anything — Convierte cualquier código fuente en un grafo de conocimiento interactivo" width="800" />
 </p>
 
 <p align="center">
@@ -65,7 +65,7 @@ Understand Anything es un [Claude Code Plugin](https://code.claude.com/docs/en/p
 Navega tu código como un grafo de conocimiento interactivo: cada archivo, función y clase es un nodo que puedes hacer clic, buscar y explorar. Selecciona cualquier nodo para ver resúmenes en lenguaje natural, relaciones y recorridos guiados.
 
 <p align="center">
-  <img src="assets/overview-structural.gif" alt="Grafo estructural — explora archivos, funciones, clases y sus relaciones" width="750" />
+  <img src="../assets/overview-structural.gif" alt="Grafo estructural — explora archivos, funciones, clases y sus relaciones" width="750" />
 </p>
 
 ### Comprende la lógica de negocio
@@ -73,7 +73,7 @@ Navega tu código como un grafo de conocimiento interactivo: cada archivo, funci
 Cambia a la vista de dominio y observa cómo tu código se mapea a procesos de negocio reales: dominios, flujos y pasos representados como un grafo horizontal.
 
 <p align="center">
-  <img src="assets/overview-domain.gif" alt="Grafo de dominio — dominios de negocio, flujos y pasos de proceso" width="750" />
+  <img src="../assets/overview-domain.gif" alt="Grafo de dominio — dominios de negocio, flujos y pasos de proceso" width="750" />
 </p>
 
 ### Analiza bases de conocimiento

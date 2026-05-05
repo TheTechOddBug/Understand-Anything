@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="../README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.png" alt="Understand Anything — 将任何代码库转换为交互式知识图谱" width="800" />
+  <img src="../assets/hero.png" alt="Understand Anything — 将任何代码库转换为交互式知识图谱" width="800" />
 </p>
 
 <p align="center">
@@ -65,7 +65,7 @@ Understand Anything 是一个 [Claude Code Plugin](https://code.claude.com/docs/
 将你的代码库以交互式知识图谱的形式呈现——每个文件、函数和类都是可点击、可搜索、可探索的节点。选择任意节点即可查看通俗易懂的摘要、依赖关系和引导式学习路径。
 
 <p align="center">
-  <img src="assets/overview-structural.gif" alt="结构图——探索文件、函数、类及其关系" width="750" />
+  <img src="../assets/overview-structural.gif" alt="结构图——探索文件、函数、类及其关系" width="750" />
 </p>
 
 ### 理解业务逻辑
@@ -73,7 +73,7 @@ Understand Anything 是一个 [Claude Code Plugin](https://code.claude.com/docs/
 切换到领域视图，查看代码如何映射到真实的业务流程——以水平图的形式展示领域、流程和步骤。
 
 <p align="center">
-  <img src="assets/overview-domain.gif" alt="领域图——业务领域、流程和处理步骤" width="750" />
+  <img src="../assets/overview-domain.gif" alt="领域图——业务领域、流程和处理步骤" width="750" />
 </p>
 
 ### 分析知识库

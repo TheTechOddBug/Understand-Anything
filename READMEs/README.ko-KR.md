@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="../README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.png" alt="Understand Anything — 모든 코드베이스를 인터랙티브 지식 그래프로 변환" width="800" />
+  <img src="../assets/hero.png" alt="Understand Anything — 모든 코드베이스를 인터랙티브 지식 그래프로 변환" width="800" />
 </p>
 
 <p align="center">
@@ -65,7 +65,7 @@ Understand Anything은 [Claude Code Plugin](https://code.claude.com/docs/en/plug
 코드베이스를 인터랙티브 지식 그래프로 탐색하세요. 모든 파일, 함수, 클래스가 클릭, 검색, 탐색 가능한 노드입니다. 노드를 선택하면 이해하기 쉬운 요약, 관계, 가이드 투어를 확인할 수 있습니다.
 
 <p align="center">
-  <img src="assets/overview-structural.gif" alt="구조 그래프 — 파일, 함수, 클래스 및 관계 탐색" width="750" />
+  <img src="../assets/overview-structural.gif" alt="구조 그래프 — 파일, 함수, 클래스 및 관계 탐색" width="750" />
 </p>
 
 ### 비즈니스 로직 이해
@@ -73,7 +73,7 @@ Understand Anything은 [Claude Code Plugin](https://code.claude.com/docs/en/plug
 도메인 뷰로 전환하면 코드가 실제 비즈니스 프로세스에 어떻게 매핑되는지 확인할 수 있습니다. 도메인, 흐름, 단계가 수평 그래프로 표시됩니다.
 
 <p align="center">
-  <img src="assets/overview-domain.gif" alt="도메인 그래프 — 비즈니스 도메인, 흐름 및 프로세스 단계" width="750" />
+  <img src="../assets/overview-domain.gif" alt="도메인 그래프 — 비즈니스 도메인, 흐름 및 프로세스 단계" width="750" />
 </p>
 
 ### 지식 베이스 분석

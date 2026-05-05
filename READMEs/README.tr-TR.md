@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="../README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.png" alt="Understand Anything — Herhangi bir kod tabanını interaktif bir bilgi grafiğine dönüştür" width="800" />
+  <img src="../assets/hero.png" alt="Understand Anything — Herhangi bir kod tabanını interaktif bir bilgi grafiğine dönüştür" width="800" />
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@ Understand Anything, projenizi çok-ajan hattıyla analiz eden, her dosya, fonks
 Kod tabanınızı interaktif bir bilgi grafiği olarak görüntüleyin — her dosya, fonksiyon ve sınıf tıklanabilir, aranabilir ve keşfedilebilir bir düğümdür. Herhangi bir düğümü seçerek anlaşılır özetleri, bağımlılıkları ve rehberli turları görün.
 
 <p align="center">
-  <img src="assets/overview-structural.gif" alt="Yapısal grafik — dosyaları, fonksiyonları, sınıfları ve ilişkilerini keşfedin" width="750" />
+  <img src="../assets/overview-structural.gif" alt="Yapısal grafik — dosyaları, fonksiyonları, sınıfları ve ilişkilerini keşfedin" width="750" />
 </p>
 
 ### İş mantığını anlayın
@@ -74,7 +74,7 @@ Kod tabanınızı interaktif bir bilgi grafiği olarak görüntüleyin — her d
 Alan görünümüne geçin ve kodunuzun gerçek iş süreçleriyle nasıl eşleştiğini görün — alanlar, akışlar ve adımlar yatay bir grafik olarak sunulur.
 
 <p align="center">
-  <img src="assets/overview-domain.gif" alt="Alan grafiği — iş alanları, akışlar ve süreç adımları" width="750" />
+  <img src="../assets/overview-domain.gif" alt="Alan grafiği — iş alanları, akışlar ve süreç adımları" width="750" />
 </p>
 
 ### Bilgi tabanlarını analiz et
