@@ -443,6 +443,28 @@ class LinkTestsTests(unittest.TestCase):
         self.assertEqual(edges[0]["target"], "file:src/foo.test.ts")
         self.assertIn("tested", prod["tags"])
 
+    def test_malformed_tags_is_replaced_not_crashed(self) -> None:
+        # Raw LLM batch JSON can ship `tags` as None, a string, or other
+        # non-list values — the TypeScript autoFixGraph normalizer runs
+        # downstream of this script. The linker must coerce instead of crash.
+        for bad_tags in (None, "tested,foo", "single", 0, {"k": "v"}):
+            with self.subTest(bad_tags=bad_tags):
+                prod = {
+                    "id": "file:src/foo.ts",
+                    "type": "file",
+                    "name": "foo.ts",
+                    "filePath": "src/foo.ts",
+                    "tags": bad_tags,
+                }
+                test = _file_node("src/foo.test.ts")
+                nodes_by_id = {prod["id"]: prod, test["id"]: test}
+                edges: list[dict[str, Any]] = []
+
+                added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+
+                self.assertEqual((added, dropped, tagged), (1, 0, 1))
+                self.assertEqual(prod["tags"], ["tested"])
+
 
 # ── merge_and_normalize integration ───────────────────────────────────────
 

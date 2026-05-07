@@ -479,7 +479,14 @@ def link_tests(
                 "description": "Path-based pairing (deterministic)",
             })
             added += 1
-            tags = prod_node.setdefault("tags", [])
+            # `tags` may be missing, None, or a malformed string from raw LLM
+            # batch JSON — the TypeScript autoFixGraph layer that normalizes it
+            # only runs downstream of this script. Coerce to a fresh list so a
+            # bad batch can't crash the whole merge.
+            tags = prod_node.get("tags")
+            if not isinstance(tags, list):
+                tags = []
+                prod_node["tags"] = tags
             if "tested" not in tags:
                 tags.append("tested")
                 tagged += 1
