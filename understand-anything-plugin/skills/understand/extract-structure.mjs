@@ -18,7 +18,7 @@
 
 import { createRequire } from 'node:module';
 import { dirname, resolve, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -40,18 +40,15 @@ try {
 const { TreeSitterPlugin, PluginRegistry, builtinLanguageConfigs, registerAllParsers } = core;
 
 // ---------------------------------------------------------------------------
-// Argument validation
-// ---------------------------------------------------------------------------
-const [,, inputPath, outputPath] = process.argv;
-if (!inputPath || !outputPath) {
-  process.stderr.write('Usage: node extract-structure.mjs <input.json> <output.json>\n');
-  process.exit(1);
-}
-
-// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
+  const [,, inputPath, outputPath] = process.argv;
+  if (!inputPath || !outputPath) {
+    process.stderr.write('Usage: node extract-structure.mjs <input.json> <output.json>\n');
+    process.exit(1);
+  }
+
   // Read input
   const inputRaw = readFileSync(inputPath, 'utf-8');
   const input = JSON.parse(inputRaw);
@@ -133,9 +130,10 @@ async function main() {
 }
 
 // ---------------------------------------------------------------------------
-// Result builder: maps StructuralAnalysis to the expected output schema
+// Result builder: maps StructuralAnalysis to the expected output schema.
+// Exported for unit tests; pure function, no I/O.
 // ---------------------------------------------------------------------------
-function buildResult(file, totalLines, nonEmptyLines, analysis, callGraph, batchImportData) {
+export function buildResult(file, totalLines, nonEmptyLines, analysis, callGraph, batchImportData) {
   const base = {
     path: file.path,
     language: file.language,
@@ -244,9 +242,12 @@ function buildResult(file, totalLines, nonEmptyLines, analysis, callGraph, batch
   // Metrics
   const metrics = {};
 
-  // Import count from batchImportData (pre-resolved by project scanner)
+  // Import count from batchImportData (pre-resolved by project scanner).
+  // Empty arrays are truthy, so explicitly check length so we fall back to the
+  // parser's own import list when the scanner could not resolve any imports
+  // (e.g. Python absolute imports the scanner doesn't follow).
   const importPaths = batchImportData?.[file.path];
-  if (importPaths) {
+  if (importPaths && importPaths.length > 0) {
     metrics.importCount = importPaths.length;
   } else if (analysis.imports) {
     metrics.importCount = analysis.imports.length;
@@ -286,11 +287,17 @@ function buildResult(file, totalLines, nonEmptyLines, analysis, callGraph, batch
 }
 
 // ---------------------------------------------------------------------------
-// Run
+// Run only when executed directly as a CLI; importing the module (e.g. from
+// tests) must not trigger main().
 // ---------------------------------------------------------------------------
-try {
-  await main();
-} catch (err) {
-  process.stderr.write(`extract-structure.mjs failed: ${err.message}\n${err.stack}\n`);
-  process.exit(1);
+const isCli =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isCli) {
+  try {
+    await main();
+  } catch (err) {
+    process.stderr.write(`extract-structure.mjs failed: ${err.message}\n${err.stack}\n`);
+    process.exit(1);
+  }
 }

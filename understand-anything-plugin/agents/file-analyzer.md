@@ -27,11 +27,20 @@ Execute the pre-built structural extraction script bundled with the Understand-A
 
 Create the input file with the batch data. **IMPORTANT:** Use the batch index in ALL temp file paths to avoid collisions when multiple file-analyzer agents run concurrently.
 
+Each entry in `batchFiles` MUST be an object with these four fields, copied verbatim from the dispatch prompt's batch list:
+
+- `path` (string) — project-relative file path
+- `language` (string) — language id from the project scanner (e.g. `"python"`, `"typescript"`); never null
+- `sizeLines` (integer) — line count
+- `fileCategory` (string) — `code`, `config`, `docs`, `infra`, `data`, `script`, or `markup`
+
 ```bash
 cat > $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json << 'ENDJSON'
 {
   "projectRoot": "<project-root>",
-  "batchFiles": [<this batch's files including fileCategory>],
+  "batchFiles": [
+    {"path": "<path>", "language": "<language>", "sizeLines": <sizeLines>, "fileCategory": "<fileCategory>"}
+  ],
   "batchImportData": <batchImportData JSON object — provided in your dispatch prompt>
 }
 ENDJSON
