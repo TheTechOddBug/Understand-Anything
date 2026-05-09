@@ -413,6 +413,122 @@ class LinkTestsTests(unittest.TestCase):
         self.assertEqual((added, dropped, tagged, swapped), (0, 1, 0, 0))
         self.assertEqual([e for e in edges if e["type"] == "tested_by"], [])
 
+    def test_dup_keeps_higher_weight_canonical(self) -> None:
+        # Two canonical tested_by edges for the same pair, weights 0.3 and
+        # 0.9. The heavier one must be kept — mirroring the weight-aware
+        # dedup at Step 6 (which never sees the discarded duplicate).
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {"source": "file:src/foo.ts", "target": "file:src/foo.test.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.3},
+            {"source": "file:src/foo.ts", "target": "file:src/foo.test.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.9},
+        ]
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+        self.assertEqual((added, dropped, swapped), (0, 1, 0))
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(len(tested_by_edges), 1)
+        self.assertEqual(tested_by_edges[0]["weight"], 0.9)
+
+    def test_dup_lighter_inverted_dropped_no_swap_counted(self) -> None:
+        # Heavier canonical first, lighter inverted second. The lighter
+        # inverted edge is dropped without being swapped — no point
+        # canonicalizing an edge that's about to die in the dedup.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {"source": "file:src/foo.ts", "target": "file:src/foo.test.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.9},
+            {"source": "file:src/foo.test.ts", "target": "file:src/foo.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.3},
+        ]
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+        self.assertEqual((added, dropped, swapped), (0, 1, 0))
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(len(tested_by_edges), 1)
+        self.assertEqual(tested_by_edges[0]["weight"], 0.9)
+        # Surviving edge is the original canonical — no audit marker.
+        self.assertNotIn(
+            "direction corrected",
+            (tested_by_edges[0].get("description") or "").lower(),
+        )
+
+    def test_dup_replaces_with_heavier_inverted(self) -> None:
+        # Lighter canonical first, heavier inverted second. The inverted
+        # edge gets swapped AND replaces the kept slot, since it's heavier.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {"source": "file:src/foo.ts", "target": "file:src/foo.test.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.3},
+            {"source": "file:src/foo.test.ts", "target": "file:src/foo.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.9},
+        ]
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+        self.assertEqual(added, 0)
+        self.assertEqual(dropped, 1)
+        self.assertEqual(swapped, 1)  # surviving edge IS a swap
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(len(tested_by_edges), 1)
+        edge = tested_by_edges[0]
+        self.assertEqual(edge["source"], "file:src/foo.ts")
+        self.assertEqual(edge["target"], "file:src/foo.test.ts")
+        self.assertEqual(edge["weight"], 0.9)
+        self.assertIn("direction corrected", edge["description"].lower())
+
+    def test_dup_swapped_then_canonical_heavier_clears_swapped_count(self) -> None:
+        # Inverted lighter first (swap is applied, swapped_pairs={pair}),
+        # then canonical heavier replaces — the surviving edge is canonical
+        # so `swapped` must drop back to 0.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {"source": "file:src/foo.test.ts", "target": "file:src/foo.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.3},
+            {"source": "file:src/foo.ts", "target": "file:src/foo.test.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.9},
+        ]
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+        self.assertEqual(added, 0)
+        self.assertEqual(dropped, 1)
+        self.assertEqual(swapped, 0)  # surviving edge is canonical, not a swap
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(len(tested_by_edges), 1)
+        self.assertEqual(tested_by_edges[0]["weight"], 0.9)
+
+    def test_dup_two_inverted_keeps_heavier_swapped_once(self) -> None:
+        # Both inverted, different weights. The heavier one wins the slot
+        # after both get swapped; `swapped` reflects the surviving edge,
+        # not the wasted swap on the dropped lighter one.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {"source": "file:src/foo.test.ts", "target": "file:src/foo.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.3},
+            {"source": "file:src/foo.test.ts", "target": "file:src/foo.ts",
+             "type": "tested_by", "direction": "forward", "weight": 0.9},
+        ]
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+        self.assertEqual(added, 0)
+        self.assertEqual(dropped, 1)
+        self.assertEqual(swapped, 1)
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(len(tested_by_edges), 1)
+        edge = tested_by_edges[0]
+        self.assertEqual(edge["weight"], 0.9)
+        self.assertIn("direction corrected", edge["description"].lower())
+
     def test_drops_duplicate_canonical_edges(self) -> None:
         # Two LLM edges describing the same (production, test) pair — keep
         # one, drop the other.

@@ -487,6 +487,24 @@ def _file_node_path(node: dict[str, Any]) -> str | None:
     return nid[len("file:"):]
 
 
+def _swap_tested_by_in_place(
+    edge: dict[str, Any], original_src: str, original_tgt: str
+) -> None:
+    """Flip an inverted `tested_by` edge so source becomes production and
+    target becomes the test file. Mutates `edge` in place; appends a
+    `[direction corrected]` audit marker to `description`.
+    """
+    edge["source"] = original_tgt
+    edge["target"] = original_src
+    edge["direction"] = "forward"
+    prev = edge.get("description")
+    edge["description"] = (
+        "Direction corrected (was test → production)"
+        if not prev
+        else f"{prev} [direction corrected]"
+    )
+
+
 def _ensure_tested_tag(node: dict[str, Any]) -> bool:
     """Append "tested" to `node["tags"]`, coercing malformed `tags` to a
     fresh list. Returns True if the tag was newly added.
@@ -557,11 +575,21 @@ def link_tests(
             node_id_to_classification[node["id"]] = "prod"
 
     # ── Pass 1: walk existing tested_by edges, canonicalize or drop.
-    # `covered` tracks (production_id, test_id) pairs already represented
-    # by a tested_by edge after this pass — used to suppress duplicate
-    # supplements in Pass 2 and to deduplicate within Pass 1 itself.
+    # `covered` tracks (production_id, test_id) pairs that have a kept edge
+    # after this pass — used both to deduplicate within Pass 1 and to
+    # suppress duplicate supplements in Pass 2.
+    # `pair_to_idx` maps each kept pair to its slot in the compacted edges
+    # list, so a duplicate that arrives later with a higher weight can
+    # replace the earlier slot in place (mirrors Step 6's
+    # `weight > existing.weight` rule — without this, a 0.3-weight edge
+    # from batch 1 would silently outrank a 0.9-weight edge from batch 2
+    # because Step 6 only ever sees one of them).
+    # `swapped_pairs` records which surviving pairs came from a flipped
+    # edge, so the `swapped` counter reflects the FINAL output and
+    # doesn't double-count work done on edges that were later replaced.
     covered: set[tuple[str, str]] = set()
-    swapped = 0
+    pair_to_idx: dict[tuple[str, str], int] = {}
+    swapped_pairs: set[tuple[str, str]] = set()
     dropped = 0
     write_idx = 0
     for edge in edges:
@@ -580,35 +608,45 @@ def link_tests(
         # has no recoverable meaning — drop it.
         if (src_class, tgt_class) == ("prod", "test"):
             pair = (src, tgt)
-            if pair in covered:
-                # Duplicate canonical edge — drop the dup, keep the first.
-                dropped += 1
-                continue
-            covered.add(pair)
-            edges[write_idx] = edge
-            write_idx += 1
+            needs_swap = False
         elif (src_class, tgt_class) == ("test", "prod"):
             pair = (tgt, src)
-            if pair in covered:
-                dropped += 1
-                continue
-            covered.add(pair)
-            # Flip in place; mark provenance so reviewers can audit.
-            edge["source"] = tgt
-            edge["target"] = src
-            edge["direction"] = "forward"
-            prev = edge.get("description")
-            edge["description"] = (
-                "Direction corrected (was test → production)"
-                if not prev
-                else f"{prev} [direction corrected]"
-            )
-            swapped += 1
-            edges[write_idx] = edge
-            write_idx += 1
+            needs_swap = True
         else:
             dropped += 1
+            continue
+
+        if pair in covered:
+            # Duplicate pair: keep the heavier-weight edge (mirrors the
+            # weight-aware dedup in Step 6, which can't help here because
+            # only one of the duplicates would reach it).
+            existing_idx = pair_to_idx[pair]
+            existing = edges[existing_idx]
+            if _num(edge.get("weight", 0)) > _num(existing.get("weight", 0)):
+                # Heavier — replace existing slot. Apply the swap (or not)
+                # only on the survivor, so we never spend cycles canonicalizing
+                # an edge we're about to drop.
+                if needs_swap:
+                    _swap_tested_by_in_place(edge, src, tgt)
+                    swapped_pairs.add(pair)
+                else:
+                    # Replacement is canonical — if the previous winner came
+                    # from a swap, the surviving slot is no longer a swap.
+                    swapped_pairs.discard(pair)
+                edges[existing_idx] = edge
+            # else: existing is heavier or equal — keep it, drop the new edge.
+            dropped += 1
+            continue
+
+        if needs_swap:
+            _swap_tested_by_in_place(edge, src, tgt)
+            swapped_pairs.add(pair)
+        covered.add(pair)
+        pair_to_idx[pair] = write_idx
+        edges[write_idx] = edge
+        write_idx += 1
     del edges[write_idx:]
+    swapped = len(swapped_pairs)
 
     # ── Pass 2: path-convention supplement for tests not yet paired.
     paired_test_ids = {test_id for (_prod_id, test_id) in covered}
