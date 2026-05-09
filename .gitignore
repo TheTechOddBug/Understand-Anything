@@ -12,3 +12,5 @@ __pycache__/
 .worktrees/
 homepage/public/demo/
 .private/
+__pycache__/
+*.pyc
