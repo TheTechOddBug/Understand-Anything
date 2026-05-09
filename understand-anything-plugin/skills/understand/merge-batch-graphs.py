@@ -221,11 +221,29 @@ def normalize_complexity(value: Any) -> tuple[str, str]:
 
 # ── Deterministic tested_by linker ────────────────────────────────────────
 #
-# `tested_by` edges are produced here, not by the LLM. The LLM sees the
-# relationship only when analyzing a *test* file (production files don't
-# import their tests), so its emitted direction is unreliable across
-# batches. We strip every LLM-emitted `tested_by` edge and produce canonical
-# `production → test` edges from path conventions instead.
+# Two-pass linker. Both passes produce canonical `production → test` edges.
+#
+# Pass 1 — preserve LLM semantics, fix direction.
+#   The LLM sees the relationship only when analyzing a *test* file
+#   (production files don't import their tests), so its emitted direction
+#   is systematically wrong: source = the file it was analyzing = a test.
+#   We do NOT strip these edges — the *pairing* is real evidence (the LLM
+#   saw an import / using / same-package call). We just flip direction
+#   when source is test + target is production. Edges that are
+#   semantically broken (test↔test, production↔production, orphan endpoints)
+#   are dropped.
+#
+# Pass 2 — supplement with path-convention pairings.
+#   For test files the LLM didn't link to anything, fall back to filename
+#   conventions (sibling `_test.go`, JS/TS `__tests__/`, Maven `src/test/`,
+#   etc.) to find a production counterpart. Pairs already covered by
+#   Pass 1 are skipped.
+#
+# Why this beats strip-and-rederive: real projects often violate the
+# linker's naming conventions (one Go `_test.go` covering several `.go`
+# files in the same package, .NET `<svc>/tests/X.cs` against
+# `<svc>/src/Y/X.cs`). Stripping LLM edges drops that real-world coverage
+# signal entirely. Swapping preserves it.
 
 def _path_segments(path: str) -> list[str]:
     """Split a relative POSIX-style path into segments (ignoring empties)."""
@@ -314,8 +332,11 @@ def production_candidates(test_path: str) -> list[str]:
             for c in _js_ts_sibling_candidates(dir_path, base_stem):
                 _add_unique(candidates, c)
 
-            # 2. Walk out of __tests__/ — drop the trailing __tests__ segment.
-            if dir_segs and dir_segs[-1] == "__tests__":
+            # 2. Walk out of test-segregating subdir — drop the trailing
+            # __tests__/test/spec/tests segment. Some JS/TS projects use
+            # `<dir>/test/foo.spec.ts` or `<dir>/spec/foo.spec.ts` instead of
+            # the more idiomatic `__tests__/`; treat them the same.
+            if dir_segs and dir_segs[-1] in ("__tests__", "test", "spec", "tests"):
                 parent_dir = "/".join(dir_segs[:-1])
                 _add_unique(candidates, _join(parent_dir, f"{base_stem}{ext}"))
                 for c in _js_ts_sibling_candidates(parent_dir, base_stem):
@@ -345,6 +366,13 @@ def production_candidates(test_path: str) -> list[str]:
 
         # Sibling
         _add_unique(candidates, _join(dir_path, f"{base_stem}.py"))
+
+        # Walk out of an in-package tests/ or test/ directory:
+        # `mypkg/tests/test_bar.py` → `mypkg/bar.py`. Common in Django apps
+        # and any project that colocates tests with the package they cover.
+        if dir_segs and dir_segs[-1] in ("tests", "test"):
+            parent_dir = "/".join(dir_segs[:-1])
+            _add_unique(candidates, _join(parent_dir, f"{base_stem}.py"))
 
         # Mirrored: tests/foo/test_bar.py → src/foo/bar.py (and variants)
         if dir_segs and dir_segs[0] in ("tests", "test"):
@@ -392,7 +420,46 @@ def production_candidates(test_path: str) -> list[str]:
         for suffix in ("Tests", "Test"):
             if stem.endswith(suffix):
                 base_stem = stem[: -len(suffix)]
+                # Sibling fallback (e.g. `Foo.Tests/BarTests.cs` ↔ same dir
+                # is rare but cheap to try).
                 _add_unique(candidates, _join(dir_path, f"{base_stem}.cs"))
+
+                # Walk out of an in-service `tests/` directory and search
+                # the sibling `src/` subtree. Handles layouts like
+                # `src/<svc>/tests/BarTests.cs` ↔ `src/<svc>/src/.../Bar.cs`
+                # (microservices-demo cartservice) and bare
+                # `<proj>/tests/BarTests.cs` ↔ `<proj>/src/Bar.cs`.
+                tests_idx = None
+                for i in range(len(dir_segs) - 1, -1, -1):
+                    if dir_segs[i].lower() in ("tests", "test"):
+                        tests_idx = i
+                        break
+                if tests_idx is not None:
+                    parent_segs = dir_segs[:tests_idx]
+                    tail_segs = dir_segs[tests_idx + 1 :]
+                    parent_dir = "/".join(parent_segs)
+                    # `<parent>/<base_stem>.cs` (drop `tests/` entirely).
+                    _add_unique(
+                        candidates,
+                        _join(parent_dir, f"{base_stem}.cs"),
+                    )
+                    # `<parent>/src/<tail>/<base_stem>.cs` (mirror through src/).
+                    src_dir = "/".join([*parent_segs, "src", *tail_segs])
+                    _add_unique(candidates, _join(src_dir, f"{base_stem}.cs"))
+
+                # `.NET`-style sibling-project mirror: `My.App.Tests/...` ↔
+                # `My.App/...`. The test project's top dir typically ends in
+                # `.Tests`. Strip it and try the same tail under the sibling.
+                if dir_segs:
+                    top = dir_segs[0]
+                    if top.endswith(".Tests") or top.endswith(".Test"):
+                        sibling = top[: -len(".Tests")] if top.endswith(".Tests") else top[: -len(".Test")]
+                        if sibling:
+                            mirror_dir = "/".join([sibling, *dir_segs[1:]])
+                            _add_unique(
+                                candidates,
+                                _join(mirror_dir, f"{base_stem}.cs"),
+                            )
                 break
 
     # ── C/C++ ─────────────────────────────────────────────────────────
@@ -420,35 +487,63 @@ def _file_node_path(node: dict[str, Any]) -> str | None:
     return nid[len("file:"):]
 
 
+def _ensure_tested_tag(node: dict[str, Any]) -> bool:
+    """Append "tested" to `node["tags"]`, coercing malformed `tags` to a
+    fresh list. Returns True if the tag was newly added.
+
+    `tags` from raw LLM batch JSON may be missing, None, a string, or
+    another non-list value — the TypeScript autoFixGraph normalizer that
+    handles this runs downstream of this script, so we defend here.
+    """
+    tags = node.get("tags")
+    if not isinstance(tags, list):
+        tags = []
+        node["tags"] = tags
+    if "tested" in tags:
+        return False
+    tags.append("tested")
+    return True
+
+
 def link_tests(
     nodes_by_id: dict[str, dict[str, Any]],
     edges: list[dict[str, Any]],
-) -> tuple[int, int, int]:
-    """Strip LLM-emitted `tested_by` edges, then link production files to
-    their tests deterministically.
+) -> tuple[int, int, int, int]:
+    """Canonicalize `tested_by` edges and link unmatched test files.
 
-    Mutates node values via `nodes_by_id` (adds `tested` tag) and `edges`
-    (drops LLM `tested_by`, appends deterministic ones).
+    Two passes (see module-level "Deterministic tested_by linker" comment
+    for the rationale):
 
-    Returns (added, dropped, tagged):
-      added:   number of deterministic tested_by edges appended
-      dropped: number of pre-existing tested_by edges removed
-      tagged:  number of production nodes newly tagged "tested"
+      1. Walk every existing `tested_by` edge. Keep canonical
+         (production → test) edges as-is. Flip inverted (test → production)
+         edges so the swap preserves the LLM's pairing evidence with the
+         right direction. Drop edges that don't classify cleanly as
+         file ↔ file or where one endpoint is missing — they have no
+         recoverable meaning.
+      2. For every test file not yet paired by Pass 1, walk path-convention
+         candidates and emit a fresh `production → test` edge for the first
+         match.
+
+    Tagging happens once per production node that ends up on the source
+    side of any `tested_by` edge (canonical, swapped, or supplemented).
+
+    Mutates `nodes_by_id` (adds "tested" tag) and `edges` (rewrites
+    in place: drops semantically broken edges, swaps inverted ones, appends
+    supplements).
+
+    Returns (added, dropped, tagged, swapped):
+      added:   path-convention supplemental edges appended in Pass 2
+      dropped: pre-existing `tested_by` edges removed (unsalvageable)
+      tagged:  production nodes newly tagged "tested"
+      swapped: pre-existing `tested_by` edges flipped (test → production
+               became production → test)
     """
-    # 1. Strip every existing tested_by edge — the LLM's direction is
-    # unreliable, so we discard and replace.
-    dropped = 0
-    write_idx = 0
-    for edge in edges:
-        if edge.get("type") == "tested_by":
-            dropped += 1
-            continue
-        edges[write_idx] = edge
-        write_idx += 1
-    del edges[write_idx:]
-
-    # 2. Index file nodes by relative path; classify each as test or production.
+    # ── Index file nodes by relative path; classify each as test/production.
+    # `is_prod` here means "is a known file node AND is not a test by
+    # path convention" — used both to validate edge endpoints and to drive
+    # path-convention candidate matching.
     file_paths_to_nodes: dict[str, dict[str, Any]] = {}
+    node_id_to_classification: dict[str, str] = {}  # id → "test" | "prod"
     test_nodes: list[tuple[str, dict[str, Any]]] = []
     for node in nodes_by_id.values():
         path = _file_node_path(node)
@@ -456,19 +551,80 @@ def link_tests(
             continue
         file_paths_to_nodes[path] = node
         if is_test_path(path):
+            node_id_to_classification[node["id"]] = "test"
             test_nodes.append((path, node))
+        else:
+            node_id_to_classification[node["id"]] = "prod"
 
-    # 3. For each test, walk its candidate production paths and take the
-    # first one that exists AND is itself classified as production.
+    # ── Pass 1: walk existing tested_by edges, canonicalize or drop.
+    # `covered` tracks (production_id, test_id) pairs already represented
+    # by a tested_by edge after this pass — used to suppress duplicate
+    # supplements in Pass 2 and to deduplicate within Pass 1 itself.
+    covered: set[tuple[str, str]] = set()
+    swapped = 0
+    dropped = 0
+    write_idx = 0
+    for edge in edges:
+        if edge.get("type") != "tested_by":
+            edges[write_idx] = edge
+            write_idx += 1
+            continue
+
+        src = edge.get("source", "")
+        tgt = edge.get("target", "")
+        src_class = node_id_to_classification.get(src)
+        tgt_class = node_id_to_classification.get(tgt)
+
+        # Both endpoints must be known file nodes; one test, one production.
+        # Anything else (orphan, test↔test, prod↔prod, non-file endpoint)
+        # has no recoverable meaning — drop it.
+        if (src_class, tgt_class) == ("prod", "test"):
+            pair = (src, tgt)
+            if pair in covered:
+                # Duplicate canonical edge — drop the dup, keep the first.
+                dropped += 1
+                continue
+            covered.add(pair)
+            edges[write_idx] = edge
+            write_idx += 1
+        elif (src_class, tgt_class) == ("test", "prod"):
+            pair = (tgt, src)
+            if pair in covered:
+                dropped += 1
+                continue
+            covered.add(pair)
+            # Flip in place; mark provenance so reviewers can audit.
+            edge["source"] = tgt
+            edge["target"] = src
+            edge["direction"] = "forward"
+            prev = edge.get("description")
+            edge["description"] = (
+                "Direction corrected (was test → production)"
+                if not prev
+                else f"{prev} [direction corrected]"
+            )
+            swapped += 1
+            edges[write_idx] = edge
+            write_idx += 1
+        else:
+            dropped += 1
+    del edges[write_idx:]
+
+    # ── Pass 2: path-convention supplement for tests not yet paired.
+    paired_test_ids = {test_id for (_prod_id, test_id) in covered}
     added = 0
-    tagged = 0
     for test_path, test_node in test_nodes:
+        if test_node["id"] in paired_test_ids:
+            continue
         for cand_path in production_candidates(test_path):
             prod_node = file_paths_to_nodes.get(cand_path)
             if prod_node is None:
                 continue
             if is_test_path(cand_path):
                 # Don't link a test to another test even if naming aligns.
+                continue
+            pair = (prod_node["id"], test_node["id"])
+            if pair in covered:
                 continue
             edges.append({
                 "source": prod_node["id"],
@@ -478,21 +634,21 @@ def link_tests(
                 "weight": 0.5,
                 "description": "Path-based pairing (deterministic)",
             })
+            covered.add(pair)
             added += 1
-            # `tags` may be missing, None, or a malformed string from raw LLM
-            # batch JSON — the TypeScript autoFixGraph layer that normalizes it
-            # only runs downstream of this script. Coerce to a fresh list so a
-            # bad batch can't crash the whole merge.
-            tags = prod_node.get("tags")
-            if not isinstance(tags, list):
-                tags = []
-                prod_node["tags"] = tags
-            if "tested" not in tags:
-                tags.append("tested")
-                tagged += 1
             break
 
-    return added, dropped, tagged
+    # ── Tag every production node that ended up sourcing a tested_by edge
+    # (covers Pass 1 canonical + swapped + Pass 2 supplements in one place).
+    tagged = 0
+    for prod_id, _test_id in covered:
+        prod_node = nodes_by_id.get(prod_id)
+        if prod_node is None:
+            continue
+        if _ensure_tested_tag(prod_node):
+            tagged += 1
+
+    return added, dropped, tagged, swapped
 
 
 # ── Main merge + normalize ────────────────────────────────────────────────
@@ -580,7 +736,7 @@ def merge_and_normalize(batches: list[dict[str, Any]]) -> tuple[dict[str, Any], 
 
     # ── Step 5b: Deterministic tested_by linker ──────────────────────
     # See module-level "Deterministic tested_by linker" section above.
-    tested_by_added, tested_by_dropped, tested_by_tagged = link_tests(
+    tested_by_added, tested_by_dropped, tested_by_tagged, tested_by_swapped = link_tests(
         nodes_by_id, all_edges
     )
 
@@ -622,12 +778,22 @@ def merge_and_normalize(batches: list[dict[str, Any]]) -> tuple[dict[str, Any], 
         fixed_lines.append(f"  {edges_rewritten:>4} × edge references rewritten after ID normalization")
     if duplicate_count:
         fixed_lines.append(f"  {duplicate_count:>4} × duplicate node IDs removed (kept last)")
+    if tested_by_swapped:
+        fixed_lines.append(f"  {tested_by_swapped:>4} × tested_by edges flipped (test → production became production → test)")
     if tested_by_dropped:
-        fixed_lines.append(f"  {tested_by_dropped:>4} × LLM-emitted tested_by edges dropped (direction unreliable)")
+        fixed_lines.append(f"  {tested_by_dropped:>4} × tested_by edges dropped (orphan endpoint or test↔test / prod↔prod pair)")
 
     if fixed_lines:
         report.append("")
-        report.append(f"Fixed ({sum(id_fix_patterns.values()) + sum(complexity_fix_patterns.values()) + edges_rewritten + duplicate_count + tested_by_dropped} corrections):")
+        total_fixes = (
+            sum(id_fix_patterns.values())
+            + sum(complexity_fix_patterns.values())
+            + edges_rewritten
+            + duplicate_count
+            + tested_by_swapped
+            + tested_by_dropped
+        )
+        report.append(f"Fixed ({total_fixes} corrections):")
         report.extend(fixed_lines)
 
     # Tested-by linker section — separate from Fixed since these are net-new
@@ -635,7 +801,7 @@ def merge_and_normalize(batches: list[dict[str, Any]]) -> tuple[dict[str, Any], 
     if tested_by_added or tested_by_tagged:
         report.append("")
         report.append("Tested-by linker:")
-        report.append(f"  {tested_by_added:>4} × tested_by edges produced (production → test)")
+        report.append(f"  {tested_by_added:>4} × tested_by edges produced (path-convention supplement, production → test)")
         report.append(f"  {tested_by_tagged:>4} × production nodes tagged \"tested\"")
 
     # Could not fix section — unknown patterns (grouped) + individual details

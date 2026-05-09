@@ -199,6 +199,49 @@ class ProductionCandidatesTests(unittest.TestCase):
         cands = mbg.production_candidates("src/test/kotlin/com/foo/BarTest.kt")
         self.assertIn("src/main/kotlin/com/foo/Bar.kt", cands)
 
+    def test_js_ts_test_subdir_walkout(self) -> None:
+        # Some JS/TS projects use `<dir>/test/` or `<dir>/spec/` instead of
+        # the more idiomatic `__tests__/`. Walk out of either.
+        cands_test = mbg.production_candidates("src/foo/test/X.test.ts")
+        self.assertIn("src/foo/X.ts", cands_test)
+        cands_spec = mbg.production_candidates("src/foo/spec/X.spec.ts")
+        self.assertIn("src/foo/X.ts", cands_spec)
+
+    def test_python_in_package_tests_walkout(self) -> None:
+        # `mypkg/tests/test_bar.py` (Django-app style) should pair with
+        # `mypkg/bar.py` — walk out of the in-package tests/ dir.
+        cands = mbg.production_candidates("mypkg/tests/test_bar.py")
+        self.assertIn("mypkg/bar.py", cands)
+        # Also nested:
+        cands_nested = mbg.production_candidates("a/b/test/test_bar.py")
+        self.assertIn("a/b/bar.py", cands_nested)
+
+    def test_csharp_tests_subdir_mirror_to_src(self) -> None:
+        # Real case from microservices-demo cartservice:
+        # `src/cartservice/tests/CartServiceTests.cs` ↔
+        # `src/cartservice/src/services/CartService.cs`. The candidate list
+        # only knows the basename; the matcher must produce a parent-level
+        # candidate that the linker can verify against the actual file index.
+        cands = mbg.production_candidates(
+            "src/cartservice/tests/CartServiceTests.cs"
+        )
+        # Drop tests/ entirely:
+        self.assertIn("src/cartservice/CartService.cs", cands)
+        # Mirror through `src/`:
+        self.assertIn("src/cartservice/src/CartService.cs", cands)
+        # Sibling fallback retained:
+        self.assertIn("src/cartservice/tests/CartService.cs", cands)
+
+    def test_csharp_dotnet_sibling_project_mirror(self) -> None:
+        # `.NET` convention: `MyApp.Tests/Foo/BarTests.cs` ↔
+        # `MyApp/Foo/Bar.cs`. Strip the `.Tests` suffix from the top dir
+        # and try the same tail under the sibling project.
+        cands = mbg.production_candidates("MyApp.Tests/Foo/BarTests.cs")
+        self.assertIn("MyApp/Foo/Bar.cs", cands)
+        # Also `.Test` (singular) is sometimes used.
+        cands_singular = mbg.production_candidates("MyApp.Test/BarTest.cs")
+        self.assertIn("MyApp/Bar.cs", cands_singular)
+
     def test_priority_underscore_tests_sibling_before_walkup(self) -> None:
         # When a test sits in `src/__tests__/`, the sibling-de-infix path
         # (same directory) ranks before the walk-out path (parent directory).
@@ -232,11 +275,12 @@ class LinkTestsTests(unittest.TestCase):
         }
         edges: list[dict[str, Any]] = []
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
         self.assertEqual(added, 1)
         self.assertEqual(dropped, 0)
         self.assertEqual(tagged, 1)
+        self.assertEqual(swapped, 0)
         self.assertEqual(len(edges), 1)
         edge = edges[0]
         self.assertEqual(edge["source"], "file:src/foo.ts")
@@ -254,18 +298,21 @@ class LinkTestsTests(unittest.TestCase):
         }
         edges: list[dict[str, Any]] = []
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
         self.assertEqual(added, 0)
         self.assertEqual(tagged, 0)
+        self.assertEqual(swapped, 0)
         self.assertEqual(len(edges), 0)
 
-    def test_strips_existing_llm_tested_by_edges(self) -> None:
+    def test_inverted_llm_edge_is_swapped_not_stripped(self) -> None:
+        # The LLM systematically emits tested_by edges as test → production
+        # (it sees the import only when analyzing the test file). The pairing
+        # is real evidence; we keep it and flip the direction in place.
         nodes_by_id = {
             "file:src/foo.ts": _file_node("src/foo.ts"),
             "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
         }
-        # Existing inverted LLM edge: test → production (wrong direction)
         edges: list[dict[str, Any]] = [
             {
                 "source": "file:src/foo.test.ts",
@@ -277,24 +324,110 @@ class LinkTestsTests(unittest.TestCase):
             },
         ]
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
-        self.assertEqual(added, 1)
-        self.assertEqual(dropped, 1)
+        # No supplement needed (the LLM edge already covers this pair).
+        self.assertEqual(added, 0)
+        self.assertEqual(swapped, 1)
+        self.assertEqual(dropped, 0)
         self.assertEqual(tagged, 1)
 
         tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
         self.assertEqual(len(tested_by_edges), 1)
-        self.assertEqual(tested_by_edges[0]["source"], "file:src/foo.ts")
-        self.assertEqual(tested_by_edges[0]["target"], "file:src/foo.test.ts")
+        edge = tested_by_edges[0]
+        self.assertEqual(edge["source"], "file:src/foo.ts")
+        self.assertEqual(edge["target"], "file:src/foo.test.ts")
+        # Provenance recorded so reviewers can audit the swap.
+        self.assertIn("direction corrected", edge["description"].lower())
 
-    def test_unrelated_edges_survive_strip(self) -> None:
+    def test_canonical_llm_edge_kept_unchanged(self) -> None:
+        # An LLM edge already in canonical direction should pass through
+        # untouched (no swap, no drop), and Pass 2 must not produce a
+        # duplicate.
         nodes_by_id = {
             "file:src/foo.ts": _file_node("src/foo.ts"),
             "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
         }
         edges: list[dict[str, Any]] = [
-            # LLM tested_by edge that gets stripped
+            {
+                "source": "file:src/foo.ts",
+                "target": "file:src/foo.test.ts",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+                "description": "original",
+            },
+        ]
+
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+
+        self.assertEqual((added, dropped, swapped), (0, 0, 0))
+        self.assertEqual(tagged, 1)
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(len(tested_by_edges), 1)
+        self.assertEqual(tested_by_edges[0]["description"], "original")
+
+    def test_drops_test_to_test_edge(self) -> None:
+        # An LLM edge between two test files has no recoverable meaning.
+        nodes_by_id = {
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+            "file:src/bar.test.ts": _file_node("src/bar.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {
+                "source": "file:src/foo.test.ts",
+                "target": "file:src/bar.test.ts",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
+        ]
+
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+
+        self.assertEqual(added, 0)
+        self.assertEqual(swapped, 0)
+        self.assertEqual(dropped, 1)
+        self.assertEqual(tagged, 0)
+        tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
+        self.assertEqual(tested_by_edges, [])
+
+    def test_drops_orphan_endpoint_edge(self) -> None:
+        # Endpoint references a node that doesn't exist in nodes_by_id —
+        # nothing to canonicalize against, drop it.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {
+                "source": "file:src/foo.ts",
+                "target": "file:src/missing.test.ts",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
+        ]
+
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+
+        self.assertEqual((added, dropped, tagged, swapped), (0, 1, 0, 0))
+        self.assertEqual([e for e in edges if e["type"] == "tested_by"], [])
+
+    def test_drops_duplicate_canonical_edges(self) -> None:
+        # Two LLM edges describing the same (production, test) pair — keep
+        # one, drop the other.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {
+                "source": "file:src/foo.ts",
+                "target": "file:src/foo.test.ts",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
             {
                 "source": "file:src/foo.test.ts",
                 "target": "file:src/foo.ts",
@@ -302,7 +435,108 @@ class LinkTestsTests(unittest.TestCase):
                 "direction": "forward",
                 "weight": 0.5,
             },
-            # Unrelated edge — should survive untouched
+        ]
+
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+
+        self.assertEqual(added, 0)
+        # First edge was canonical; second was inverted but described the
+        # same pair → dropped as a duplicate (not a swap).
+        self.assertEqual(dropped, 1)
+        self.assertEqual(swapped, 0)
+        self.assertEqual(tagged, 1)
+        self.assertEqual(len([e for e in edges if e["type"] == "tested_by"]), 1)
+
+    def test_supplement_skips_pair_already_covered_by_llm(self) -> None:
+        # If the LLM (after swap) already covers a (production, test) pair
+        # that a path-convention candidate would also produce, Pass 2 must
+        # not emit a duplicate.
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+            "file:src/bar.ts": _file_node("src/bar.ts"),
+            "file:src/bar.test.ts": _file_node("src/bar.test.ts"),
+        }
+        # LLM only emitted (and inverted) the foo pair. The bar pair is
+        # covered by Pass 2 (path convention).
+        edges: list[dict[str, Any]] = [
+            {
+                "source": "file:src/foo.test.ts",
+                "target": "file:src/foo.ts",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
+        ]
+
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+
+        self.assertEqual(swapped, 1)
+        self.assertEqual(added, 1)  # only bar; foo is already covered
+        self.assertEqual(dropped, 0)
+        self.assertEqual(tagged, 2)
+        tested_by_edges = sorted(
+            [e for e in edges if e["type"] == "tested_by"],
+            key=lambda e: e["source"],
+        )
+        self.assertEqual(len(tested_by_edges), 2)
+
+    def test_swap_recovers_real_world_one_test_many_production(self) -> None:
+        # Real case from microservices-demo: shippingservice_test.go does
+        # not have a `shippingservice.go` sibling — it tests `main.go`,
+        # `tracker.go`, and `quote.go`. Path convention can't pair these,
+        # but the LLM saw the same-package usage and emitted the edges
+        # (with wrong direction). Swap should recover them.
+        nodes_by_id = {
+            "file:src/shippingservice/main.go": _file_node("src/shippingservice/main.go"),
+            "file:src/shippingservice/tracker.go": _file_node("src/shippingservice/tracker.go"),
+            "file:src/shippingservice/quote.go": _file_node("src/shippingservice/quote.go"),
+            "file:src/shippingservice/shippingservice_test.go": _file_node("src/shippingservice/shippingservice_test.go"),
+        }
+        edges: list[dict[str, Any]] = [
+            {
+                "source": "file:src/shippingservice/shippingservice_test.go",
+                "target": "file:src/shippingservice/main.go",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
+            {
+                "source": "file:src/shippingservice/shippingservice_test.go",
+                "target": "file:src/shippingservice/tracker.go",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
+        ]
+
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
+
+        self.assertEqual(swapped, 2)
+        # Pass 2 fallback: the test file with no shippingservice.go sibling
+        # produces no path-convention candidate — we rely entirely on swap.
+        self.assertEqual(added, 0)
+        self.assertEqual(dropped, 0)
+        # main.go and tracker.go were tagged; quote.go was not (LLM didn't
+        # emit an edge for it, and there's no path-convention pair).
+        self.assertEqual(tagged, 2)
+        self.assertIn("tested", nodes_by_id["file:src/shippingservice/main.go"]["tags"])
+        self.assertIn("tested", nodes_by_id["file:src/shippingservice/tracker.go"]["tags"])
+        self.assertNotIn("tested", nodes_by_id["file:src/shippingservice/quote.go"]["tags"])
+
+    def test_unrelated_edges_pass_through(self) -> None:
+        nodes_by_id = {
+            "file:src/foo.ts": _file_node("src/foo.ts"),
+            "file:src/foo.test.ts": _file_node("src/foo.test.ts"),
+        }
+        edges: list[dict[str, Any]] = [
+            {
+                "source": "file:src/foo.test.ts",
+                "target": "file:src/foo.ts",
+                "type": "tested_by",
+                "direction": "forward",
+                "weight": 0.5,
+            },
             {
                 "source": "file:src/foo.ts",
                 "target": "file:src/foo.test.ts",
@@ -331,7 +565,7 @@ class LinkTestsTests(unittest.TestCase):
         }
         edges: list[dict[str, Any]] = []
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
         self.assertEqual(added, 3)
         for edge in edges:
@@ -355,12 +589,14 @@ class LinkTestsTests(unittest.TestCase):
         edges: list[dict[str, Any]] = []
 
         mbg.link_tests(nodes_by_id, edges)
-        # Second invocation must not duplicate edges or tags.
-        added2, dropped2, tagged2 = mbg.link_tests(nodes_by_id, edges)
+        # Second invocation must not duplicate edges or tags. The first run
+        # added a canonical supplement edge; the second sees it as canonical
+        # in Pass 1 and keeps it without flipping or duplicating.
+        added2, dropped2, tagged2, swapped2 = mbg.link_tests(nodes_by_id, edges)
 
-        # On the second pass: existing deterministic edge gets stripped (it is
-        # a tested_by edge) and re-added; tag is already there. So edge count
-        # stays at 1 and tags has exactly one "tested".
+        self.assertEqual((added2, dropped2, swapped2), (0, 0, 0))
+        # Tag was already present, so tagged counter for second call is 0.
+        self.assertEqual(tagged2, 0)
         tested_by_edges = [e for e in edges if e["type"] == "tested_by"]
         self.assertEqual(len(tested_by_edges), 1)
         tags = nodes_by_id["file:src/foo.ts"]["tags"]
@@ -377,7 +613,7 @@ class LinkTestsTests(unittest.TestCase):
         }
         edges: list[dict[str, Any]] = []
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
         self.assertEqual(added, 1)
         self.assertEqual(tagged, 1)
@@ -397,7 +633,7 @@ class LinkTestsTests(unittest.TestCase):
         }
         edges: list[dict[str, Any]] = []
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
         self.assertEqual(added, 0)
         self.assertEqual(tagged, 0)
@@ -419,8 +655,8 @@ class LinkTestsTests(unittest.TestCase):
 
     def test_empty_input(self) -> None:
         edges: list[dict[str, Any]] = []
-        added, dropped, tagged = mbg.link_tests({}, edges)
-        self.assertEqual((added, dropped, tagged), (0, 0, 0))
+        added, dropped, tagged, swapped = mbg.link_tests({}, edges)
+        self.assertEqual((added, dropped, tagged, swapped), (0, 0, 0, 0))
         self.assertEqual(edges, [])
 
     def test_node_without_filepath_falls_back_to_id(self) -> None:
@@ -436,9 +672,9 @@ class LinkTestsTests(unittest.TestCase):
         nodes_by_id = {prod["id"]: prod, test["id"]: test}
         edges: list[dict[str, Any]] = []
 
-        added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+        added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
-        self.assertEqual((added, dropped, tagged), (1, 0, 1))
+        self.assertEqual((added, dropped, tagged, swapped), (1, 0, 1, 0))
         self.assertEqual(edges[0]["source"], "file:src/foo.ts")
         self.assertEqual(edges[0]["target"], "file:src/foo.test.ts")
         self.assertIn("tested", prod["tags"])
@@ -460,9 +696,9 @@ class LinkTestsTests(unittest.TestCase):
                 nodes_by_id = {prod["id"]: prod, test["id"]: test}
                 edges: list[dict[str, Any]] = []
 
-                added, dropped, tagged = mbg.link_tests(nodes_by_id, edges)
+                added, dropped, tagged, swapped = mbg.link_tests(nodes_by_id, edges)
 
-                self.assertEqual((added, dropped, tagged), (1, 0, 1))
+                self.assertEqual((added, dropped, tagged, swapped), (1, 0, 1, 0))
                 self.assertEqual(prod["tags"], ["tested"])
 
 
