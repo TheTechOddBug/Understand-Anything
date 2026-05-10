@@ -242,7 +242,9 @@ Using the script's structural data and file categories, create edges:
 | `implements` | A class implements an interface in the project | `0.9` | `forward` |
 | `exports` | File exports a function or class node you created (only for exported items — use IN ADDITION to `contains`, not instead of it) | `0.8` | `forward` |
 | `depends_on` | File has runtime dependency on another project file (broader than imports -- includes dynamic requires, lazy loads) | `0.6` | `forward` |
-| `tested_by` | Source file is tested by a test file (infer from test file imports and naming conventions) | `0.5` | `forward` |
+| `tested_by` | Production file is exercised by a test file. Emit when you see the test importing/using the production file. Use direction `production → test` if you can; the merge script will flip inverted edges and dedupe. | `0.5` | `forward` |
+
+**Note on `tested_by`:** It's fine to emit even if you're unsure of the direction (you typically see the relationship while analyzing the *test* file, where the import points back at production). The merge script (`merge-batch-graphs.py`) canonicalizes direction to `production → test` and drops semantically broken edges (test↔test, prod↔prod, orphan endpoint). Path-convention pairing supplements anything you miss.
 
 #### Edges for non-code files:
 
