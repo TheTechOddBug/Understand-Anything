@@ -448,7 +448,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
           <div className="flex items-center gap-4 w-max">
             <DiffToggle />
             {/* Detail level: file view (architecture) / class view (code structure) */}
-            {!isKnowledgeGraph && (
+            {!isKnowledgeGraph && viewMode !== "domain" && (
               <>
                 <div className="w-px h-5 bg-border-subtle" />
                 <div className="flex items-center bg-elevated rounded-lg p-0.5">

@@ -344,6 +344,8 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
     set({
       detailLevel: level,
       // Detail level changes which nodes are visible; cached positions stale.
+      // Reset fn toggle so it doesn't resurrect when re-entering class view.
+      showFunctionsInClassView: false,
       containerLayoutCache: new Map(),
       containerSizeMemory: new Map(),
       expandedContainers: new Set(),
