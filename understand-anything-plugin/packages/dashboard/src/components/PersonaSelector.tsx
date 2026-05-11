@@ -1,27 +1,29 @@
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 import type { Persona } from "../store";
-
-const personas: { id: Persona; label: string; description: string }[] = [
-  {
-    id: "non-technical",
-    label: "Overview",
-    description: "High-level architecture view",
-  },
-  {
-    id: "junior",
-    label: "Learn",
-    description: "Full dashboard with guided learning",
-  },
-  {
-    id: "experienced",
-    label: "Deep Dive",
-    description: "Code-focused with chat",
-  },
-];
 
 export default function PersonaSelector() {
   const persona = useDashboardStore((s) => s.persona);
   const setPersona = useDashboardStore((s) => s.setPersona);
+  const { t } = useI18n();
+
+  const personas: { id: Persona; label: string; description: string }[] = [
+    {
+      id: "non-technical",
+      label: t.personaSelector.overview,
+      description: t.personaSelector.overviewDesc,
+    },
+    {
+      id: "junior",
+      label: t.personaSelector.learn,
+      description: t.personaSelector.learnDesc,
+    },
+    {
+      id: "experienced",
+      label: t.personaSelector.deepDive,
+      description: t.personaSelector.deepDiveDesc,
+    },
+  ];
 
   return (
     <div className="flex items-center gap-1 bg-elevated rounded-lg p-0.5">

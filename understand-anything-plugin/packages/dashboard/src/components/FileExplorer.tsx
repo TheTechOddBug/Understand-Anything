@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { GraphNode } from "@understand-anything/core/types";
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 
 interface FileEntry {
   name: string;
@@ -142,6 +143,7 @@ export default function FileExplorer() {
   const graph = useDashboardStore((s) => s.graph);
   const openCodeViewer = useDashboardStore((s) => s.openCodeViewer);
   const navigateToNode = useDashboardStore((s) => s.navigateToNode);
+  const { t } = useI18n();
   const entries = useMemo(() => buildFileTree(graph?.nodes ?? []), [graph]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
@@ -176,7 +178,7 @@ export default function FileExplorer() {
   if (!graph) {
     return (
       <div className="h-full flex items-center justify-center p-5 text-sm text-text-muted">
-        No graph loaded
+        {t.common.noGraphLoaded}
       </div>
     );
   }
@@ -185,15 +187,15 @@ export default function FileExplorer() {
     <div className="h-full flex flex-col min-h-0">
       <div className="px-4 py-3 border-b border-border-subtle shrink-0">
         <div className="text-[11px] font-semibold uppercase tracking-wider text-accent">
-          Analyzed Files
+          {t.fileExplorer.analyzedFiles}
         </div>
         <div className="text-xs text-text-muted mt-1">
-          {totalFiles} files from the current knowledge graph
+          {totalFiles} {t.fileExplorer.filesFromGraph}
         </div>
       </div>
       <div className="flex-1 overflow-auto py-2">
         {entries.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-text-muted">No file paths found.</div>
+          <div className="px-4 py-6 text-sm text-text-muted">{t.fileExplorer.noFilePathsFound}</div>
         ) : (
           entries.map((entry) => (
             <FileTreeRow

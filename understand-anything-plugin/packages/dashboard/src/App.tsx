@@ -23,6 +23,7 @@ import type { KeyboardShortcut } from "./hooks/useKeyboardShortcuts";
 import { ThemeProvider } from "./themes/index.ts";
 import { ThemePicker } from "./components/ThemePicker.tsx";
 import type { ThemeConfig } from "./themes/index.ts";
+import { I18nProvider } from "./contexts/I18nContext.tsx";
 
 // Lazy-load heavy / optional components so they ship in separate chunks.
 const CodeViewer = lazy(() => import("./components/CodeViewer"));
@@ -44,6 +45,7 @@ function dataUrl(fileName: string, token: string | null): string {
       "domain-graph.json": import.meta.env.VITE_DOMAIN_GRAPH_URL,
       "meta.json": import.meta.env.VITE_META_URL,
       "diff-overlay.json": import.meta.env.VITE_DIFF_OVERLAY_URL,
+      "config.json": import.meta.env.VITE_CONFIG_URL,
     };
     const url = envMap[fileName];
     if (url) return url;
@@ -118,6 +120,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [metaTheme, setMetaTheme] = useState<ThemeConfig | null>(null);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("info");
+  const [outputLanguage, setOutputLanguage] = useState<string | undefined>();
   const viewMode = useDashboardStore((s) => s.viewMode);
   const setViewMode = useDashboardStore((s) => s.setViewMode);
   const isKnowledgeGraph = useDashboardStore((s) => s.isKnowledgeGraph);
@@ -137,6 +140,12 @@ function Dashboard({ accessToken }: { accessToken: string }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((meta) => {
         if (meta?.theme) setMetaTheme(meta.theme);
+      })
+      .catch(() => {});
+    fetch(dataUrl("config.json", accessToken))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((config) => {
+        if (config?.outputLanguage) setOutputLanguage(config.outputLanguage);
       })
       .catch(() => {});
   }, []);
@@ -399,7 +408,8 @@ function Dashboard({ accessToken }: { accessToken: string }) {
   }
 
   return (
-    <ThemeProvider metaTheme={metaTheme}>
+    <I18nProvider language={outputLanguage ?? "en"}>
+      <ThemeProvider metaTheme={metaTheme}>
     <div className="h-screen w-screen flex flex-col bg-root text-text-primary noise-overlay">
       {/* Header */}
       <header className="flex items-center px-3 sm:px-5 py-3 bg-surface border-b border-border-subtle shrink-0 gap-2 sm:gap-4">
@@ -662,6 +672,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
       )}
     </div>
     </ThemeProvider>
+    </I18nProvider>
   );
 }
 

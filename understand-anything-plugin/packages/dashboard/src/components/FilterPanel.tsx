@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useDashboardStore, ALL_NODE_TYPES, ALL_COMPLEXITIES, ALL_EDGE_CATEGORIES } from "../store";
 import type { NodeType, Complexity, EdgeCategory } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 
 export default function FilterPanel() {
   const graph = useDashboardStore((s) => s.graph);
@@ -10,6 +11,7 @@ export default function FilterPanel() {
   const hasActiveFilters = useDashboardStore((s) => s.hasActiveFilters);
   const filterPanelOpen = useDashboardStore((s) => s.filterPanelOpen);
   const toggleFilterPanel = useDashboardStore((s) => s.toggleFilterPanel);
+  const { t } = useI18n();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +99,7 @@ export default function FilterPanel() {
             d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
           />
         </svg>
-        Filter
+        {t.common.filter}
       </button>
 
       {filterPanelOpen && (
@@ -106,7 +108,7 @@ export default function FilterPanel() {
             {/* Node Types */}
             <div>
               <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                Node Types
+                {t.filterPanel.nodeTypes}
               </h3>
               <div className="space-y-1.5">
                 {allNodeTypes.map((type) => (
@@ -129,7 +131,7 @@ export default function FilterPanel() {
             {/* Complexity */}
             <div>
               <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                Complexity
+                {t.filterPanel.complexity}
               </h3>
               <div className="space-y-1.5">
                 {allComplexities.map((complexity) => (
@@ -153,7 +155,7 @@ export default function FilterPanel() {
             {layers.length > 0 && (
               <div>
                 <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                  Layers
+                  {t.filterPanel.layers}
                 </h3>
                 <div className="space-y-1.5">
                   {layers.map((layer) => (
@@ -178,7 +180,7 @@ export default function FilterPanel() {
             {/* Edge Categories */}
             <div>
               <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                Edge Categories
+                {t.filterPanel.edgeCategories}
               </h3>
               <div className="space-y-1.5">
                 {allEdgeCategories.map((category) => (
@@ -206,7 +208,7 @@ export default function FilterPanel() {
                 onClick={resetFilters}
                 className="w-full px-3 py-1.5 text-sm bg-elevated hover:bg-gold/20 text-text-secondary hover:text-gold rounded-lg transition-colors"
               >
-                Reset All
+                {t.common.resetAll}
               </button>
             )}
           </div>
