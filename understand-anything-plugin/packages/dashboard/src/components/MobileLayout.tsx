@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { GraphIssue } from "@understand-anything/core/schema";
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 import GraphView from "./GraphView";
 import DomainGraphView from "./DomainGraphView";
 import KnowledgeGraphView from "./KnowledgeGraphView";
@@ -45,6 +46,7 @@ export default function MobileLayout({
   const closeCodeViewer = useDashboardStore((s) => s.closeCodeViewer);
   const pathFinderOpen = useDashboardStore((s) => s.pathFinderOpen);
   const togglePathFinder = useDashboardStore((s) => s.togglePathFinder);
+  const { t } = useI18n();
 
   const [activeTab, setActiveTab] = useState<MobileTab>("graph");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -96,7 +98,7 @@ export default function MobileLayout({
         </button>
 
         <h1 className="font-heading text-base flex-1 min-w-0 truncate text-center text-text-primary tracking-wide">
-          {graph?.project.name ?? "Understand Anything"}
+          {graph?.project.name ?? t.common.appName}
         </h1>
 
         <button

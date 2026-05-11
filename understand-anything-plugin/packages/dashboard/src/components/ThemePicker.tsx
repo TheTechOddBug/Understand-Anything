@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme, PRESETS } from "../themes/index.ts";
 import type { HeadingFont } from "../themes/index.ts";
+import { useI18n } from "../contexts/I18nContext";
 
 export function ThemePicker() {
   const { config, preset, setPreset, setAccent, setHeadingFont } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   // Close on outside click
   useEffect(() => {
@@ -41,7 +43,7 @@ export function ThemePicker() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-text-secondary hover:text-text-primary transition-colors"
-        title="Change theme"
+        title={t.themePicker.changeTheme}
       >
         <svg
           width="14"
@@ -59,7 +61,7 @@ export function ThemePicker() {
           <circle cx="12" cy="7" r="1.5" fill="currentColor" />
           <circle cx="16" cy="10" r="1.5" fill="currentColor" />
         </svg>
-        <span className="hidden sm:inline">Theme</span>
+        <span className="hidden sm:inline">{t.common.theme}</span>
       </button>
 
       {open && (
@@ -67,7 +69,7 @@ export function ThemePicker() {
           {/* Presets */}
           <div>
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
-              Theme
+              {t.themePicker.theme}
             </div>
             <div className="space-y-1">
               {PRESETS.map((p) => (
@@ -119,7 +121,7 @@ export function ThemePicker() {
           {/* Accent swatches */}
           <div>
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
-              Accent Color
+              {t.themePicker.accentColor}
             </div>
             <div className="flex gap-2 flex-wrap">
               {preset.accentSwatches.map((swatch) => (
@@ -141,13 +143,13 @@ export function ThemePicker() {
           {/* Heading font */}
           <div>
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
-              Heading Font
+              {t.themePicker.headingFont}
             </div>
             <div className="flex gap-1">
               {([
-                { id: "serif" as HeadingFont, label: "Serif", sample: "Aa" },
-                { id: "sans" as HeadingFont, label: "Sans", sample: "Aa" },
-                { id: "mono" as HeadingFont, label: "Mono", sample: "Aa" },
+                { id: "serif" as HeadingFont, label: t.themePicker.serif, sample: "Aa" },
+                { id: "sans" as HeadingFont, label: t.themePicker.sans, sample: "Aa" },
+                { id: "mono" as HeadingFont, label: t.themePicker.mono, sample: "Aa" },
               ]).map((opt) => (
                 <button
                   key={opt.id}

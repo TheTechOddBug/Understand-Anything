@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 import PersonaSelector from "./PersonaSelector";
 import DiffToggle from "./DiffToggle";
 import LayerLegend from "./LayerLegend";
@@ -20,19 +21,7 @@ interface NodeTypeFilterDef {
   color: string;
 }
 
-const STRUCTURAL_FILTERS: NodeTypeFilterDef[] = [
-  { key: "code", label: "Code", color: "var(--color-node-file)" },
-  { key: "config", label: "Config", color: "var(--color-node-config)" },
-  { key: "docs", label: "Docs", color: "var(--color-node-document)" },
-  { key: "infra", label: "Infra", color: "var(--color-node-service)" },
-  { key: "data", label: "Data", color: "var(--color-node-table)" },
-  { key: "domain", label: "Domain", color: "var(--color-node-concept)" },
-  { key: "knowledge", label: "Knowledge", color: "var(--color-node-article)" },
-];
 
-const KNOWLEDGE_FILTERS: NodeTypeFilterDef[] = [
-  { key: "knowledge", label: "All", color: "var(--color-node-article)" },
-];
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -55,6 +44,21 @@ export default function MobileDrawer({
   const setViewMode = useDashboardStore((s) => s.setViewMode);
   const nodeTypeFilters = useDashboardStore((s) => s.nodeTypeFilters);
   const toggleNodeTypeFilter = useDashboardStore((s) => s.toggleNodeTypeFilter);
+  const { t } = useI18n();
+
+  const structuralFilters: NodeTypeFilterDef[] = [
+    { key: "code", label: t.nodeTypeLabels.code, color: "var(--color-node-file)" },
+    { key: "config", label: t.nodeTypeLabels.config, color: "var(--color-node-config)" },
+    { key: "docs", label: t.nodeTypeLabels.docs, color: "var(--color-node-document)" },
+    { key: "infra", label: t.nodeTypeLabels.infra, color: "var(--color-node-service)" },
+    { key: "data", label: t.nodeTypeLabels.data, color: "var(--color-node-table)" },
+    { key: "domain", label: t.nodeTypeLabels.domain, color: "var(--color-node-concept)" },
+    { key: "knowledge", label: t.nodeTypeLabels.knowledge, color: "var(--color-node-article)" },
+  ];
+
+  const knowledgeFilters: NodeTypeFilterDef[] = [
+    { key: "knowledge", label: t.nodeTypeLabels.all, color: "var(--color-node-article)" },
+  ];
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +79,7 @@ export default function MobileDrawer({
     };
   }, [open]);
 
-  const filterDefs = isKnowledgeGraph ? KNOWLEDGE_FILTERS : STRUCTURAL_FILTERS;
+  const filterDefs = isKnowledgeGraph ? knowledgeFilters : structuralFilters;
   const showViewToggle = Boolean(graph && !isKnowledgeGraph && domainGraph);
 
   return (
@@ -105,10 +109,10 @@ export default function MobileDrawer({
         <header className="flex items-center justify-between px-5 py-4 border-b border-border-subtle shrink-0">
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
-              Controls
+              {t.drawer.controls}
             </span>
             <h2 className="font-heading text-lg text-text-primary mt-0.5 leading-none">
-              {graph?.project.name ?? "Dashboard"}
+              {graph?.project.name ?? t.drawer.dashboard}
             </h2>
           </div>
           <button
@@ -132,13 +136,13 @@ export default function MobileDrawer({
         {/* Body */}
         <div className="flex-1 overflow-auto px-5 py-5 space-y-7">
           <section>
-            <SectionLabel>Role</SectionLabel>
+            <SectionLabel>{t.drawer.role}</SectionLabel>
             <PersonaSelector />
           </section>
 
           {showViewToggle && (
             <section>
-              <SectionLabel>View</SectionLabel>
+              <SectionLabel>{t.drawer.view}</SectionLabel>
               <div className="inline-flex items-center bg-elevated rounded-lg p-0.5">
                 <button
                   type="button"
@@ -149,7 +153,7 @@ export default function MobileDrawer({
                       : "text-text-muted hover:text-text-secondary"
                   }`}
                 >
-                  Domain
+                  {t.drawer.domain}
                 </button>
                 <button
                   type="button"
@@ -160,19 +164,19 @@ export default function MobileDrawer({
                       : "text-text-muted hover:text-text-secondary"
                   }`}
                 >
-                  Structural
+                  {t.drawer.structural}
                 </button>
               </div>
             </section>
           )}
 
           <section>
-            <SectionLabel>Diff overlay</SectionLabel>
+            <SectionLabel>{t.drawer.diffOverlay}</SectionLabel>
             <DiffToggle />
           </section>
 
           <section>
-            <SectionLabel>Node types</SectionLabel>
+            <SectionLabel>{t.drawer.nodeTypes}</SectionLabel>
             <div className="flex flex-wrap gap-1.5">
               {filterDefs.map((cat) => {
                 const active = nodeTypeFilters[cat.key] !== false;
@@ -203,7 +207,7 @@ export default function MobileDrawer({
 
           {graph && (graph.layers?.length ?? 0) > 0 && (
             <section>
-              <SectionLabel>Layers</SectionLabel>
+              <SectionLabel>{t.drawer.layers}</SectionLabel>
               <div className="-mx-1">
                 <LayerLegend />
               </div>
@@ -211,7 +215,7 @@ export default function MobileDrawer({
           )}
 
           <section>
-            <SectionLabel>Tools</SectionLabel>
+            <SectionLabel>{t.drawer.tools}</SectionLabel>
             <div className="flex flex-wrap items-center gap-2">
               <FilterPanel />
               <ExportMenu />
@@ -231,7 +235,7 @@ export default function MobileDrawer({
                     d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                   />
                 </svg>
-                Path
+                {t.drawer.path}
               </button>
               <ThemePicker />
               <button
@@ -241,7 +245,7 @@ export default function MobileDrawer({
                   onClose();
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-elevated text-text-secondary hover:text-text-primary transition-colors"
-                aria-label="Keyboard shortcuts"
+                aria-label={t.drawer.help}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -251,7 +255,7 @@ export default function MobileDrawer({
                     d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Help
+                {t.drawer.help}
               </button>
             </div>
           </section>

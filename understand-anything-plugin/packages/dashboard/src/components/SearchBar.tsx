@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 
 const typeBadgeColors: Record<string, string> = {
   file: "text-node-file border border-node-file/30 bg-node-file/10",
@@ -28,6 +29,7 @@ export default function SearchBar() {
   const navigateToNodeInLayer = useDashboardStore((s) => s.navigateToNodeInLayer);
   const searchMode = useDashboardStore((s) => s.searchMode);
   const setSearchMode = useDashboardStore((s) => s.setSearchMode);
+  const { t } = useI18n();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -104,7 +106,7 @@ export default function SearchBar() {
           value={searchQuery}
           onChange={handleInputChange}
           onFocus={() => setDropdownOpen(true)}
-          placeholder="Search nodes by name, summary, or tags..."
+          placeholder={t.search.placeholder}
           className="flex-1 min-w-0 bg-elevated text-text-primary text-sm rounded-lg px-3 py-1.5 border border-border-subtle focus:outline-none focus:border-accent/50 placeholder-text-muted"
         />
         <div className="flex items-center gap-1 bg-elevated rounded-lg p-0.5 shrink-0">
@@ -116,7 +118,7 @@ export default function SearchBar() {
                 : "text-text-muted hover:text-text-secondary"
             }`}
           >
-            Fuzzy
+            {t.search.fuzzy}
           </button>
           <button
             onClick={() => setSearchMode("semantic")}
@@ -126,12 +128,12 @@ export default function SearchBar() {
                 : "text-text-muted hover:text-text-secondary"
             }`}
           >
-            Semantic
+            {t.search.semantic}
           </button>
         </div>
         {searchQuery.trim() && (
           <span className="hidden sm:inline text-xs text-text-muted shrink-0">
-            {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}{" "}
+            {searchResults.length} {t.search.result}{searchResults.length !== 1 ? "s" : ""}{" "}
             <span className="text-text-muted">({searchMode})</span>
           </span>
         )}
