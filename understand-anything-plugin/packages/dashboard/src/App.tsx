@@ -394,16 +394,18 @@ function Dashboard({ accessToken }: { accessToken: string }) {
 
   if (isMobile) {
     return (
-      <ThemeProvider metaTheme={metaTheme}>
-        <MobileLayout
-          accessToken={accessToken}
-          showKeyboardHelp={showKeyboardHelp}
-          setShowKeyboardHelp={setShowKeyboardHelp}
-          loadError={loadError}
-          allIssues={allIssues}
-          shortcuts={shortcuts}
-        />
-      </ThemeProvider>
+      <I18nProvider language={outputLanguage ?? "en"}>
+        <ThemeProvider metaTheme={metaTheme}>
+          <MobileLayout
+            accessToken={accessToken}
+            showKeyboardHelp={showKeyboardHelp}
+            setShowKeyboardHelp={setShowKeyboardHelp}
+            loadError={loadError}
+            allIssues={allIssues}
+            shortcuts={shortcuts}
+          />
+        </ThemeProvider>
+      </I18nProvider>
     );
   }
 

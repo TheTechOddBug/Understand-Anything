@@ -121,10 +121,10 @@ Determine whether to run a full analysis or incremental update.
       - `chinese` → `zh`, `japanese` → `ja`, `korean` → `ko`, `english` → `en`, `spanish` → `es`, `french` → `fr`, `german` → `de`, `portuguese` → `pt`, `russian` → `ru`, `arabic` → `ar`, etc.
       - Locale variants: `zh-TW`, `zh-HK`, `zh-CN`, `pt-BR`, etc. are preserved as-is.
     - If `--language` is NOT specified:
-      - Check `$PROJECT_ROOT/.understand-anything/config.json` for an existing `language` field. If present, use that.
+      - Check `$PROJECT_ROOT/.understand-anything/config.json` for an existing `outputLanguage` field. If present, use that.
       - If no stored preference, default to `en` (English).
     - If `--language` IS specified:
-      - Update `$PROJECT_ROOT/.understand-anything/config.json` with the new language: merge `{"language": "<lang>"}` into existing config.
+      - Update `$PROJECT_ROOT/.understand-anything/config.json` with the new language: merge `{"outputLanguage": "<lang>"}` into existing config.
       - Store as `$OUTPUT_LANGUAGE` for use throughout all phases.
     - **Language directive template:** Store as `$LANGUAGE_DIRECTIVE`:
       ```markdown
