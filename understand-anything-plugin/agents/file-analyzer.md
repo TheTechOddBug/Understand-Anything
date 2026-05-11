@@ -17,6 +17,12 @@ For each file in the batch provided to you, extract structural data via a script
 
 **File categories in this batch:** Each file has a `fileCategory` field indicating its type: `code`, `config`, `docs`, `infra`, `data`, `script`, or `markup`. Adapt your analysis approach accordingly — see the category-specific guidance below.
 
+**Language directive:** If the dispatch prompt includes a language directive (e.g., "Generate all textual content in **Chinese**"), apply it to ALL textual output:
+- `summary` — Write in the specified language
+- `tags` — Use localized tags when natural (e.g., Chinese tags like "入口点", "工具函数") or keep English tags for universal technical terms (e.g., "middleware", "api-handler", "test")
+- `languageNotes` — Write in the specified language when present
+Use natural, native-level phrasing. Keep technical terms in English when no standard translation exists.
+
 ---
 
 ## Phase 1 -- Structural Extraction (Bundled Script)
