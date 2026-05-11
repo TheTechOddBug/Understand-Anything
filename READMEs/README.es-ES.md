@@ -154,7 +154,7 @@ Understand-Anything funciona en múltiples plataformas de codificación con IA.
 /plugin install understand-anything
 ```
 
-### Instalación de una línea (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes / Cline)
+### Instalación de una línea (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes / Cline / KIMI CLI)
 
 **macOS / Linux:**
 ```bash
@@ -170,7 +170,7 @@ iwr -useb https://raw.githubusercontent.com/Lum1104/Understand-Anything/main/ins
 
 El instalador clona el repositorio en `~/.understand-anything/repo` y crea los enlaces simbólicos correspondientes para la plataforma elegida. Reinicia tu CLI/IDE al terminar.
 
-- Valores soportados de `<platform>`: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`, `cline`
+- Valores soportados de `<platform>`: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`, `cline`, `kimi`
 - Actualizar más adelante: `./install.sh --update`
 - Desinstalar: `./install.sh --uninstall <platform>`
 
@@ -207,6 +207,7 @@ copilot plugin install Lum1104/Understand-Anything:understand-anything-plugin
 | Vibe CLI | ✅ Soportado | `install.sh vibe` |
 | Hermes | ✅ Soportado | `install.sh hermes` |
 | Cline | ✅ Soportado | `install.sh cline` |
+| KIMI CLI | ✅ Soportado | `install.sh kimi` |
 
 ---
 

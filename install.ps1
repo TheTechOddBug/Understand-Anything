@@ -37,6 +37,7 @@ $Platforms = [ordered]@{
     vscode      = @{ Target = (Join-Path $HOME '.copilot\skills');            Style = 'per-skill' }
     hermes      = @{ Target = (Join-Path $HOME '.hermes\skills');             Style = 'folder' }
     cline       = @{ Target = (Join-Path $HOME '.cline\skills');              Style = 'folder' }
+    kimi        = @{ Target = (Join-Path $HOME '.kimi\skills');               Style = 'folder' }
 }
 
 function Show-Usage {

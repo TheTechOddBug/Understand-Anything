@@ -155,7 +155,7 @@ Understand-Anything birden fazla AI kodlama platformunda çalışır.
 /plugin install understand-anything
 ```
 
-### Tek satırlık kurulum (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes / Cline)
+### Tek satırlık kurulum (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes / Cline / KIMI CLI)
 
 **macOS / Linux:**
 ```bash
@@ -171,7 +171,7 @@ iwr -useb https://raw.githubusercontent.com/Lum1104/Understand-Anything/main/ins
 
 Kurulum betiği depoyu `~/.understand-anything/repo` dizinine klonlar ve seçilen platform için uygun sembolik bağlantıları oluşturur. Sonrasında CLI/IDE'ni yeniden başlat.
 
-- Desteklenen `<platform>` değerleri: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`, `cline`
+- Desteklenen `<platform>` değerleri: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`, `cline`, `kimi`
 - Daha sonra güncelle: `./install.sh --update`
 - Kaldır: `./install.sh --uninstall <platform>`
 
@@ -208,6 +208,7 @@ copilot plugin install Lum1104/Understand-Anything:understand-anything-plugin
 | Vibe CLI | ✅ Destekleniyor | `install.sh vibe` |
 | Hermes | ✅ Destekleniyor | `install.sh hermes` |
 | Cline | ✅ Destekleniyor | `install.sh cline` |
+| KIMI CLI | ✅ Destekleniyor | `install.sh kimi` |
 
 ---
 
