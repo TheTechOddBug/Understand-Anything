@@ -36,6 +36,7 @@ $Platforms = [ordered]@{
     antigravity = @{ Target = (Join-Path $HOME '.gemini\antigravity\skills'); Style = 'folder' }
     vscode      = @{ Target = (Join-Path $HOME '.copilot\skills');            Style = 'per-skill' }
     hermes      = @{ Target = (Join-Path $HOME '.hermes\skills');             Style = 'folder' }
+    cline       = @{ Target = (Join-Path $HOME '.cline\skills');              Style = 'folder' }
 }
 
 function Show-Usage {
