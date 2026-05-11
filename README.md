@@ -11,16 +11,6 @@
 </p>
 
 <p align="center">
- <a href="https://www.star-history.com/lum1104/understand-anything">
-  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-  </picture>
- </a>
-</p>
-
-<p align="center">
   <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-blue" alt="Quick Start" /></a>
   <a href="https://github.com/Lum1104/Understand-Anything/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT" /></a>
   <a href="https://docs.anthropic.com/en/docs/claude-code"><img src="https://img.shields.io/badge/Claude_Code-8A2BE2" alt="Claude Code" /></a>
@@ -46,14 +36,11 @@
 
 ---
 
-> [!TIP]
-> **A huge thank you to the community!** The support for Understand-Anything has been incredible. If this tool saves you a few minutes of digging through complexity, that's all I wanted. 🚀
-
 **You just joined a new team. The codebase is 200,000 lines of code. Where do you even start?**
 
 Understand Anything is a [Claude Code Plugin](https://code.claude.com/docs/en/plugins-reference#plugins-reference) that analyzes your project with a multi-agent pipeline, builds a knowledge graph of every file, function, class, and dependency, then gives you an interactive dashboard to explore it all visually. Stop reading code blind. Start seeing the big picture.
 
-> **Graphs that teach > graphs that impress.**
+> **The goal isn't a graph that wows you with how complex your codebase is — it's a graph that quietly teaches you how every piece fits together.**
 
 ---
 
@@ -66,17 +53,9 @@ Understand Anything is a [Claude Code Plugin](https://code.claude.com/docs/en/pl
 
 Navigate your codebase as an interactive knowledge graph — every file, function, and class is a node you can click, search, and explore. Select any node to see plain-English summaries, relationships, and guided tours.
 
-<p align="center">
-  <img src="assets/overview-structural.gif" alt="Structural graph — explore files, functions, classes and their relationships" width="750" />
-</p>
-
 ### Understand business logic
 
 Switch to the domain view and see how your code maps to real business processes — domains, flows, and steps laid out as a horizontal graph.
-
-<p align="center">
-  <img src="assets/overview-domain.gif" alt="Domain graph — business domains, flows, and process steps" width="750" />
-</p>
 
 ### Analyze knowledge bases
 
@@ -177,7 +156,7 @@ Understand-Anything works across multiple AI coding platforms.
 /plugin install understand-anything
 ```
 
-### One-line install (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot)
+### One-line install (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes)
 
 **macOS / Linux:**
 ```bash
@@ -193,7 +172,7 @@ iwr -useb https://raw.githubusercontent.com/Lum1104/Understand-Anything/main/ins
 
 The installer clones the repo to `~/.understand-anything/repo` and creates the right symlinks for the chosen platform. Restart your CLI/IDE afterwards.
 
-- Supported `<platform>` values: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`
+- Supported `<platform>` values: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`
 - Update later: `./install.sh --update`
 - Uninstall: `./install.sh --uninstall <platform>`
 
@@ -228,6 +207,7 @@ copilot plugin install Lum1104/Understand-Anything:understand-anything-plugin
 | Gemini CLI | ✅ Supported | `install.sh gemini` |
 | Pi Agent | ✅ Supported | `install.sh pi` |
 | Vibe CLI | ✅ Supported | `install.sh vibe` |
+| Hermes | ✅ Supported | `install.sh hermes` |
 
 ---
 
@@ -302,6 +282,10 @@ Please open an issue first for major changes so we can discuss the approach.
    <img alt="Star History Chart" src="https://api.star-history.com/image?repos=Lum1104/Understand-Anything&type=date&legend=top-left" />
  </picture>
 </a>
+
+<p align="center">
+  <em>Thanks to everyone who's used and contributed — knowing this saves people time is what made it worth building.</em>
+</p>
 
 <p align="center">
   MIT License &copy; <a href="https://github.com/Lum1104">Lum1104</a>

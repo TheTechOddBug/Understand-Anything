@@ -10,16 +10,6 @@
 </p>
 
 <p align="center">
- <a href="https://www.star-history.com/lum1104/understand-anything">
-  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-  </picture>
- </a>
-</p>
-
-<p align="center">
   <a href="#-inicio-rápido"><img src="https://img.shields.io/badge/Inicio_Rápido-blue" alt="Quick Start" /></a>
   <a href="https://github.com/Lum1104/Understand-Anything/blob/main/LICENSE"><img src="https://img.shields.io/badge/Licencia-MIT-yellow" alt="License: MIT" /></a>
   <a href="https://docs.anthropic.com/en/docs/claude-code"><img src="https://img.shields.io/badge/Claude_Code-8A2BE2" alt="Claude Code" /></a>
@@ -44,14 +34,11 @@
 
 ---
 
-> [!TIP]
-> **¡Un enorme agradecimiento a la comunidad!** El apoyo a Understand-Anything ha sido increíble. Si esta herramienta te ahorra unos minutos de buscar entre la complejidad, eso es todo lo que quería. 🚀
-
 **Acabas de unirte a un nuevo equipo. El código tiene 200,000 líneas. ¿Por dónde empiezas?**
 
 Understand Anything es un [Claude Code Plugin](https://code.claude.com/docs/en/plugins-reference#plugins-reference) que analiza tu proyecto con un pipeline multi-agente, construye un grafo de conocimiento de cada archivo, función, clase y dependencia, y luego te ofrece un panel interactivo para explorarlo visualmente. Deja de leer código a ciegas. Empieza a ver el panorama completo.
 
-> **Grafos que enseñan > grafos que solo presumen.**
+> **El objetivo no es un grafo que te impresione mostrándote lo complejo que es tu código — es un grafo que, sin alardes, te enseña cómo encaja cada pieza.**
 
 ---
 
@@ -64,17 +51,9 @@ Understand Anything es un [Claude Code Plugin](https://code.claude.com/docs/en/p
 
 Navega tu código como un grafo de conocimiento interactivo: cada archivo, función y clase es un nodo que puedes hacer clic, buscar y explorar. Selecciona cualquier nodo para ver resúmenes en lenguaje natural, relaciones y recorridos guiados.
 
-<p align="center">
-  <img src="../assets/overview-structural.gif" alt="Grafo estructural — explora archivos, funciones, clases y sus relaciones" width="750" />
-</p>
-
 ### Comprende la lógica de negocio
 
 Cambia a la vista de dominio y observa cómo tu código se mapea a procesos de negocio reales: dominios, flujos y pasos representados como un grafo horizontal.
-
-<p align="center">
-  <img src="../assets/overview-domain.gif" alt="Grafo de dominio — dominios de negocio, flujos y pasos de proceso" width="750" />
-</p>
 
 ### Analiza bases de conocimiento
 
@@ -175,7 +154,7 @@ Understand-Anything funciona en múltiples plataformas de codificación con IA.
 /plugin install understand-anything
 ```
 
-### Instalación de una línea (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / VS Code Copilot)
+### Instalación de una línea (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes)
 
 **macOS / Linux:**
 ```bash
@@ -191,7 +170,7 @@ iwr -useb https://raw.githubusercontent.com/Lum1104/Understand-Anything/main/ins
 
 El instalador clona el repositorio en `~/.understand-anything/repo` y crea los enlaces simbólicos correspondientes para la plataforma elegida. Reinicia tu CLI/IDE al terminar.
 
-- Valores soportados de `<platform>`: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vscode`
+- Valores soportados de `<platform>`: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`
 - Actualizar más adelante: `./install.sh --update`
 - Desinstalar: `./install.sh --uninstall <platform>`
 
@@ -225,6 +204,8 @@ copilot plugin install Lum1104/Understand-Anything:understand-anything-plugin
 | Antigravity | ✅ Soportado | `install.sh antigravity` |
 | Gemini CLI | ✅ Soportado | `install.sh gemini` |
 | Pi Agent | ✅ Soportado | `install.sh pi` |
+| Vibe CLI | ✅ Soportado | `install.sh vibe` |
+| Hermes | ✅ Soportado | `install.sh hermes` |
 
 ---
 
@@ -299,6 +280,10 @@ Para cambios importantes, abre primero un issue para que podamos discutir el enf
    <img alt="Star History Chart" src="https://api.star-history.com/image?repos=Lum1104/Understand-Anything&type=date&legend=top-left" />
  </picture>
 </a>
+
+<p align="center">
+  <em>Gracias a todas las personas que lo han usado y han contribuido — saber que les ahorra tiempo es lo que hizo que valiera la pena construirlo.</em>
+</p>
 
 <p align="center">
   Licencia MIT &copy; <a href="https://github.com/Lum1104">Lum1104</a>

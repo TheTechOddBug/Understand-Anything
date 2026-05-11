@@ -11,16 +11,6 @@
 </p>
 
 <p align="center">
- <a href="https://www.star-history.com/lum1104/understand-anything">
-  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-  </picture>
- </a>
-</p>
-
-<p align="center">
   <a href="#-hızlı-başlangıç"><img src="https://img.shields.io/badge/Hızlı_Başlangıç-blue" alt="Hızlı Başlangıç" /></a>
   <a href="https://github.com/Lum1104/Understand-Anything/blob/main/LICENSE"><img src="https://img.shields.io/badge/Lisans-MIT-yellow" alt="Lisans: MIT" /></a>
   <a href="https://docs.anthropic.com/en/docs/claude-code"><img src="https://img.shields.io/badge/Claude_Code-8A2BE2" alt="Claude Code" /></a>
@@ -45,14 +35,11 @@
 
 ---
 
-> [!TIP]
-> **Topluluğa çok teşekkürler!** Understand-Anything'e gösterilen destek inanılmaz oldu. Bu araç sana karmaşıklığı anlamak için birkaç dakika kazandırıyorsa, istediğim tek şey buydu. 🚀
-
 **Yeni bir ekibe katıldın. Kod tabanı 200.000 satır kod. Nereden başlayacaksın bile bilemiyorsun?**
 
 Understand Anything, projenizi çok-ajan hattıyla analiz eden, her dosya, fonksiyon, sınıf ve bağımlılığın bilgi grafiğini oluşturan ve hepsini görsel olarak keşfetmen için interaktif bir kontrol paneli sunan bir [Claude Code Plugin](https://code.claude.com/docs/en/plugins-reference#plugins-reference)'dir. Kodu körü körüne okumayı bırak. Büyük resmi görmeye başla.
 
-> **Öğreten grafikler > sadece gösteriş yapan grafikler.**
+> **Amaç, kod tabanının ne kadar karmaşık olduğunu görkemle gösteren bir grafik değil — her parçanın nasıl birbirine geçtiğini sessizce öğreten bir grafik.**
 
 ---
 
@@ -65,17 +52,9 @@ Understand Anything, projenizi çok-ajan hattıyla analiz eden, her dosya, fonks
 
 Kod tabanınızı interaktif bir bilgi grafiği olarak görüntüleyin — her dosya, fonksiyon ve sınıf tıklanabilir, aranabilir ve keşfedilebilir bir düğümdür. Herhangi bir düğümü seçerek anlaşılır özetleri, bağımlılıkları ve rehberli turları görün.
 
-<p align="center">
-  <img src="../assets/overview-structural.gif" alt="Yapısal grafik — dosyaları, fonksiyonları, sınıfları ve ilişkilerini keşfedin" width="750" />
-</p>
-
 ### İş mantığını anlayın
 
 Alan görünümüne geçin ve kodunuzun gerçek iş süreçleriyle nasıl eşleştiğini görün — alanlar, akışlar ve adımlar yatay bir grafik olarak sunulur.
-
-<p align="center">
-  <img src="../assets/overview-domain.gif" alt="Alan grafiği — iş alanları, akışlar ve süreç adımları" width="750" />
-</p>
 
 ### Bilgi tabanlarını analiz et
 
@@ -176,7 +155,7 @@ Understand-Anything birden fazla AI kodlama platformunda çalışır.
 /plugin install understand-anything
 ```
 
-### Tek satırlık kurulum (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / VS Code Copilot)
+### Tek satırlık kurulum (Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes)
 
 **macOS / Linux:**
 ```bash
@@ -192,7 +171,7 @@ iwr -useb https://raw.githubusercontent.com/Lum1104/Understand-Anything/main/ins
 
 Kurulum betiği depoyu `~/.understand-anything/repo` dizinine klonlar ve seçilen platform için uygun sembolik bağlantıları oluşturur. Sonrasında CLI/IDE'ni yeniden başlat.
 
-- Desteklenen `<platform>` değerleri: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vscode`
+- Desteklenen `<platform>` değerleri: `gemini`, `codex`, `opencode`, `pi`, `openclaw`, `antigravity`, `vibe`, `vscode`, `hermes`
 - Daha sonra güncelle: `./install.sh --update`
 - Kaldır: `./install.sh --uninstall <platform>`
 
@@ -226,6 +205,8 @@ copilot plugin install Lum1104/Understand-Anything:understand-anything-plugin
 | Antigravity | ✅ Destekleniyor | `install.sh antigravity` |
 | Gemini CLI | ✅ Destekleniyor | `install.sh gemini` |
 | Pi Agent | ✅ Destekleniyor | `install.sh pi` |
+| Vibe CLI | ✅ Destekleniyor | `install.sh vibe` |
+| Hermes | ✅ Destekleniyor | `install.sh hermes` |
 
 ---
 
@@ -300,6 +281,10 @@ Büyük değişiklikler için lütfen önce bir issue aç ki yaklaşımı tartı
    <img alt="Star Geçmişi Grafiği" src="https://api.star-history.com/image?repos=Lum1104/Understand-Anything&type=date&legend=top-left" />
  </picture>
 </a>
+
+<p align="center">
+  <em>Kullanan ve katkıda bulunan herkese teşekkürler — bunun insanlara zaman kazandırdığını bilmek, yapmaya değer kılan tek şeydi.</em>
+</p>
 
 <p align="center">
   MIT Lisansı &copy; <a href="https://github.com/Lum1104">Lum1104</a>

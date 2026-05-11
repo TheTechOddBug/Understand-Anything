@@ -10,16 +10,6 @@
 </p>
 
 <p align="center">
- <a href="https://www.star-history.com/lum1104/understand-anything">
-  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
-  </picture>
- </a>
-</p>
-
-<p align="center">
   <a href="#-快速开始"><img src="https://img.shields.io/badge/快速开始-blue" alt="Quick Start" /></a>
   <a href="https://github.com/Lum1104/Understand-Anything/blob/main/LICENSE"><img src="https://img.shields.io/badge/许可证-MIT-yellow" alt="License: MIT" /></a>
   <a href="https://docs.anthropic.com/en/docs/claude-code"><img src="https://img.shields.io/badge/Claude_Code-8A2BE2" alt="Claude Code" /></a>
@@ -44,14 +34,11 @@
 
 ---
 
-> [!TIP]
-> **衷心感谢社区的支持！** Understand-Anything 收到的关注超出了我的预期。如果这个工具能帮你从复杂的资料中理出一点头绪，少走几分钟弯路，那我开发它的初衷就达到了。🚀
-
 **当你刚加入一个新团队，面对 20 万行代码，你从哪里开始？**
 
 Understand Anything 是一个 [Claude Code Plugin](https://code.claude.com/docs/en/plugins-reference#plugins-reference)，通过多智能体（multi-agent）架构分析你的项目，构建包含文件、函数、类以及依赖关系的知识图谱，并提供一个可视化交互界面，帮助你理解整个系统。不再”盲读代码”，而是从全局视角理解系统结构。
 
-> **寓教于乐的图表 > 仅为炫技的图表。**
+> **目标不是用代码库的复杂程度来惊艳你 —— 而是默默告诉你每一块是怎么拼在一起的。**
 
 ---
 
@@ -64,17 +51,9 @@ Understand Anything 是一个 [Claude Code Plugin](https://code.claude.com/docs/
 
 将你的代码库以交互式知识图谱的形式呈现——每个文件、函数和类都是可点击、可搜索、可探索的节点。选择任意节点即可查看通俗易懂的摘要、依赖关系和引导式学习路径。
 
-<p align="center">
-  <img src="../assets/overview-structural.gif" alt="结构图——探索文件、函数、类及其关系" width="750" />
-</p>
-
 ### 理解业务逻辑
 
 切换到领域视图，查看代码如何映射到真实的业务流程——以水平图的形式展示领域、流程和步骤。
-
-<p align="center">
-  <img src="../assets/overview-domain.gif" alt="领域图——业务领域、流程和处理步骤" width="750" />
-</p>
 
 ### 分析知识库
 
@@ -175,7 +154,7 @@ Understand-Anything 可在多个 AI 编码平台上运行。
 /plugin install understand-anything
 ```
 
-### 一行命令安装（Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / VS Code Copilot）
+### 一行命令安装（Codex / OpenCode / OpenClaw / Antigravity / Gemini CLI / Pi Agent / Vibe CLI / VS Code Copilot / Hermes）
 
 **macOS / Linux：**
 ```bash
@@ -191,7 +170,7 @@ iwr -useb https://raw.githubusercontent.com/Lum1104/Understand-Anything/main/ins
 
 安装脚本会将仓库克隆到 `~/.understand-anything/repo`，并为所选平台创建相应的符号链接。安装完成后请重启 CLI 或 IDE。
 
-- 支持的 `<platform>` 取值：`gemini`、`codex`、`opencode`、`pi`、`openclaw`、`antigravity`、`vscode`
+- 支持的 `<platform>` 取值：`gemini`、`codex`、`opencode`、`pi`、`openclaw`、`antigravity`、`vibe`、`vscode`、`hermes`
 - 后续更新：`./install.sh --update`
 - 卸载：`./install.sh --uninstall <platform>`
 
@@ -225,6 +204,8 @@ copilot plugin install Lum1104/Understand-Anything:understand-anything-plugin
 | Antigravity | ✅ 支持 | `install.sh antigravity` |
 | Gemini CLI | ✅ 支持 | `install.sh gemini` |
 | Pi Agent | ✅ 支持 | `install.sh pi` |
+| Vibe CLI | ✅ 支持 | `install.sh vibe` |
+| Hermes | ✅ 支持 | `install.sh hermes` |
 
 ---
 
@@ -299,6 +280,10 @@ git add .gitattributes .understand-anything/
    <img alt="Star History Chart" src="https://api.star-history.com/image?repos=Lum1104/Understand-Anything&type=date&legend=top-left" />
  </picture>
 </a>
+
+<p align="center">
+  <em>感谢每一位使用过、贡献过的朋友 —— 知道它替你们省下了一些时间，就是当初做它最值得的理由。</em>
+</p>
 
 <p align="center">
   MIT 许可证 &copy; <a href="https://github.com/Lum1104">Lum1104</a>
