@@ -111,6 +111,20 @@ Apunta `/understand-knowledge` a un [wiki LLM con patrón Karpathy](https://gist
 
 Un pipeline multi-agente escanea tu proyecto, extrae cada archivo, función, clase y dependencia, y construye un grafo de conocimiento guardado en `.understand-anything/knowledge-graph.json`.
 
+**Salida localizada:** Usa `--language` para generar contenido en tu idioma preferido:
+
+```bash
+# Genera contenido en el idioma preferido (descripciones de nodos y UI del dashboard)
+/understand --language en
+
+# Idiomas soportados: en (default), zh, zh-TW, ja, ko
+```
+
+El parámetro `--language` afecta:
+- Resúmenes y descripciones de nodos en el grafo de conocimiento
+- Etiquetas, botones y tooltips de la UI del dashboard
+- Explicaciones de los tours guiados
+
 ### 3. Explora el panel
 
 ```bash

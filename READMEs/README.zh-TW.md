@@ -111,6 +111,20 @@ Understand Anything 是一個 [Claude Code Plugin](https://code.claude.com/docs/
 
 多智能體（multi-agent）架構會：掃描你的專案，提取函式 / 類別 / 相依關係，建構知識圖譜並儲存至 `.understand-anything/knowledge-graph.json`。
 
+**在地化輸出：** 使用 `--language` 參數產生中文內容：
+
+```bash
+# 產生繁體中文內容（知識圖節點描述和 Dashboard UI）
+/understand --language zh-TW
+
+# 支援的語言：en（預設）、zh、zh-TW、ja、ko
+```
+
+`--language` 參數會影響：
+- 知識圖譜中的節點摘要和描述
+- Dashboard UI 的標籤、按鈕和提示
+-導覽路線的解釋說明
+
 ### 3. 開啟資料看板
 
 ```bash

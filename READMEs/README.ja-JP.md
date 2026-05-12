@@ -112,6 +112,20 @@ Understand Anything は [Claude Code Plugin](https://code.claude.com/docs/en/plu
 
 マルチエージェントパイプラインがプロジェクトをスキャンし、すべてのファイル・関数・クラス・依存関係を抽出して、`.understand-anything/knowledge-graph.json` にナレッジグラフを保存します。
 
+**ローカライズされた出力：** `--language` を使用して、希望の言語でコンテンツを生成：
+
+```bash
+# 日本語でコンテンツを生成（ナレッジグラフのノード説明とダッシュボードUI）
+/understand --language ja
+
+# サポート言語：en（デフォルト）、zh、zh-TW、ja、ko
+```
+
+`--language` パラメータは以下に影響します：
+- ナレッジグラフのノードサマリーと説明
+- ダッシュボードUIのラベル、ボタン、ツールチップ
+- ガイド付きツアーの説明
+
 ### 3. ダッシュボードで探索
 
 ```bash

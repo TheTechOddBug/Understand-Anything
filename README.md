@@ -113,6 +113,20 @@ Point `/understand-knowledge` at a [Karpathy-pattern LLM wiki](https://gist.gith
 
 A multi-agent pipeline scans your project, extracts every file, function, class, and dependency, then builds a knowledge graph saved to `.understand-anything/knowledge-graph.json`.
 
+**Localized output:** Use `--language` to generate content in your preferred language:
+
+```bash
+# Generate Chinese content (知识图节点描述和 Dashboard UI)
+/understand --language zh
+
+# Supported languages: en (default), zh, zh-TW, ja, ko
+```
+
+The `--language` parameter affects:
+- Node summaries and descriptions in the knowledge graph
+- Dashboard UI labels, buttons, and tooltips
+- Guided tour explanations
+
 ### 3. Explore the dashboard
 
 ```bash

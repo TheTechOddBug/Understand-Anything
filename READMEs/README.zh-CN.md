@@ -111,6 +111,20 @@ Understand Anything 是一个 [Claude Code Plugin](https://code.claude.com/docs/
 
 多智能体（multi-agent）架构会：扫描你的项目，提取函数 / 类 / 依赖，构建知识图谱保存至`.understand-anything/knowledge-graph.json`.
 
+**本地化输出：** 使用 `--language` 参数生成中文内容：
+
+```bash
+# 生成中文内容（知识图节点描述和 Dashboard UI）
+/understand --language zh
+
+# 支持的语言：en（默认）、zh、zh-TW、ja、ko
+```
+
+`--language` 参数会影响：
+- 知识图谱中的节点摘要和描述
+- Dashboard UI 的标签、按钮和提示
+- 导览路线的解释说明
+
 ### 3. 打开数据看板
 
 ```bash
