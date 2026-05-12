@@ -51,6 +51,13 @@ const discordUrl = 'https://discord.gg/pydat66RY';
       <span class="hero-enterprise-arrow">&rarr;</span>
     </a>
 
+    <a href="https://lum.is-a.dev/" target="_blank" rel="noopener noreferrer" class="hero-author anim anim-5">
+      <span class="hero-author-label">Author</span>
+      <span class="hero-author-divider">&middot;</span>
+      <span class="hero-author-handle">Lum1104</span>
+      <span class="hero-author-arrow">&rarr;</span>
+    </a>
+
     <details class="hero-subscribe anim anim-6">
       <summary class="hero-subscribe-toggle">
         <span>Subscribe to release updates</span>
@@ -333,6 +340,60 @@ const discordUrl = 'https://discord.gg/pydat66RY';
     transform: translateX(3px);
   }
 
+  /* Author homepage — pill mirroring Enterprise, sits directly under it */
+  .hero-author {
+    margin-top: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 1.1rem;
+    border: 1px solid rgba(212, 165, 116, 0.3);
+    border-radius: 100px;
+    background: rgba(212, 165, 116, 0.04);
+    text-decoration: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease,
+      background-color 0.25s ease;
+  }
+
+  .hero-author:hover {
+    border-color: rgba(212, 165, 116, 0.55);
+    background: rgba(212, 165, 116, 0.08);
+    box-shadow: 0 0 24px rgba(212, 165, 116, 0.15);
+    transform: translateY(-1px);
+    text-decoration: none;
+  }
+
+  .hero-author-label {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #d4a574;
+  }
+
+  .hero-author-divider {
+    color: rgba(212, 165, 116, 0.45);
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+
+  .hero-author-handle {
+    font-family: var(--font-code);
+    font-size: 0.82rem;
+    color: #e8e2d8;
+  }
+
+  .hero-author-arrow {
+    color: #d4a574;
+    font-size: 0.95rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+  }
+
+  .hero-author:hover .hero-author-arrow {
+    transform: translateX(3px);
+  }
+
   /* Subscribe */
   .hero-subscribe {
     margin-top: 2rem;
@@ -465,6 +526,14 @@ const discordUrl = 'https://discord.gg/pydat66RY';
     }
     .hero-enterprise-divider { display: none; }
     .hero-enterprise-email { font-size: 0.78rem; }
+    .hero-author {
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.6rem 1.25rem;
+      max-width: 100%;
+    }
+    .hero-author-divider { display: none; }
+    .hero-author-handle { font-size: 0.78rem; }
   }
 
   @media (max-width: 480px) {
