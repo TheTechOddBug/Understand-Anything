@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 import type { NodeType, EdgeType, KnowledgeGraph, GraphNode } from "@understand-anything/core/types";
 
 // Badge color classes keyed by NodeType — must be kept in sync with core NodeType union.
@@ -33,56 +34,9 @@ const complexityBadgeColors: Record<string, string> = {
   complex: "text-[#c97070] border border-[#c97070]/30 bg-[#c97070]/10",
 };
 
-/**
- * Human-readable directional labels for all 29 edge types.
- * Must be kept in sync with core EdgeType.
- */
-const EDGE_LABELS: Record<EdgeType, { forward: string; backward: string }> = {
-  imports: { forward: "imports", backward: "imported by" },
-  exports: { forward: "exports to", backward: "exported by" },
-  contains: { forward: "contains", backward: "contained in" },
-  inherits: { forward: "inherits from", backward: "inherited by" },
-  implements: { forward: "implements", backward: "implemented by" },
-  calls: { forward: "calls", backward: "called by" },
-  subscribes: { forward: "subscribes to", backward: "subscribed by" },
-  publishes: { forward: "publishes to", backward: "consumed by" },
-  middleware: { forward: "middleware for", backward: "uses middleware" },
-  reads_from: { forward: "reads from", backward: "read by" },
-  writes_to: { forward: "writes to", backward: "written by" },
-  transforms: { forward: "transforms", backward: "transformed by" },
-  validates: { forward: "validates", backward: "validated by" },
-  depends_on: { forward: "depends on", backward: "depended on by" },
-  tested_by: { forward: "tested by", backward: "tests" },
-  configures: { forward: "configures", backward: "configured by" },
-  related: { forward: "related to", backward: "related to" },
-  similar_to: { forward: "similar to", backward: "similar to" },
-  deploys: { forward: "deploys", backward: "deployed by" },
-  serves: { forward: "serves", backward: "served by" },
-  migrates: { forward: "migrates", backward: "migrated by" },
-  documents: { forward: "documents", backward: "documented by" },
-  provisions: { forward: "provisions", backward: "provisioned by" },
-  routes: { forward: "routes to", backward: "routed from" },
-  defines_schema: { forward: "defines schema for", backward: "schema defined by" },
-  triggers: { forward: "triggers", backward: "triggered by" },
-  contains_flow: { forward: "contains flow", backward: "flow in" },
-  flow_step: { forward: "flow step", backward: "step of" },
-  cross_domain: { forward: "cross-domain to", backward: "cross-domain from" },
-  cites: { forward: "cites", backward: "cited by" },
-  contradicts: { forward: "contradicts", backward: "contradicted by" },
-  builds_on: { forward: "builds on", backward: "built upon by" },
-  exemplifies: { forward: "exemplifies", backward: "exemplified by" },
-  categorized_under: { forward: "categorized under", backward: "categorizes" },
-  authored_by: { forward: "authored by", backward: "authored" },
-};
-
-/**
- * Returns a human-readable directional label for an edge type.
- * Falls back to formatted type name for unknown edge types.
- */
-function getDirectionalLabel(edgeType: string, isSource: boolean): string {
-  const labels = (EDGE_LABELS as Record<string, { forward: string; backward: string }>)[edgeType];
+function getDirectionalLabel(edgeType: string, isSource: boolean, t: ReturnType<typeof useI18n>["t"]): string {
+  const labels = t.edgeLabels[edgeType as EdgeType];
   if (!labels) {
-    // Fallback for unknown edge types
     const formatted = edgeType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     return isSource ? formatted : `${formatted} (reverse)`;
   }
@@ -91,6 +45,7 @@ function getDirectionalLabel(edgeType: string, isSource: boolean): string {
 
 function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeGraph }) {
   const navigateToNode = useDashboardStore((s) => s.navigateToNode);
+  const { t } = useI18n();
   const meta = node.knowledgeMeta;
 
   // Wikilinks (outgoing related edges)
@@ -117,7 +72,7 @@ function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: Knowled
     <div className="space-y-3">
       {categoryNode && (
         <div>
-          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Category</h4>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.category}</h4>
           <button
             type="button"
             onClick={() => navigateToNode(categoryNode.id)}
@@ -130,7 +85,7 @@ function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: Knowled
       {meta?.wikilinks && meta.wikilinks.length > 0 && (
         <div>
           <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
-            Wikilinks ({wikilinks.length})
+            {t.nodeInfo.wikilinks} ({wikilinks.length})
           </h4>
           <div className="space-y-1 max-h-[200px] overflow-auto">
             {wikilinks.map((n) => (
@@ -149,7 +104,7 @@ function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: Knowled
       {backlinks.length > 0 && (
         <div>
           <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
-            Backlinks ({backlinks.length})
+            {t.nodeInfo.backlinks} ({backlinks.length})
           </h4>
           <div className="space-y-1 max-h-[200px] overflow-auto">
             {backlinks.map((n) => (
@@ -167,11 +122,11 @@ function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: Knowled
       )}
       {meta?.content && (
         <div>
-          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Preview</h4>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.common.preview}</h4>
           <div className="text-[11px] text-text-secondary leading-relaxed bg-elevated rounded-lg p-3 max-h-[300px] overflow-auto whitespace-pre-wrap font-mono">
             {meta.content.slice(0, 1500)}
             {meta.content.length > 1500 && (
-              <span className="text-text-muted">... (truncated)</span>
+              <span className="text-text-muted">... {t.common.truncated}</span>
             )}
           </div>
         </div>
@@ -183,6 +138,7 @@ function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: Knowled
 function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeGraph }) {
   const navigateToDomain = useDashboardStore((s) => s.navigateToDomain);
   const selectNode = useDashboardStore((s) => s.selectNode);
+  const { t } = useI18n();
   const meta = node.domainMeta;
 
   if (node.type === "domain") {
@@ -195,7 +151,7 @@ function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeG
       <div className="space-y-3">
         {Array.isArray(meta?.entities) && meta.entities.length > 0 ? (
           <div>
-            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Entities</h4>
+            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.entities}</h4>
             <div className="flex flex-wrap gap-1">
               {meta.entities.map((e) => (
                 <span key={e} className="text-[11px] px-2 py-0.5 rounded bg-elevated text-text-secondary">{e}</span>
@@ -205,7 +161,7 @@ function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeG
         ) : null}
         {Array.isArray(meta?.businessRules) && meta.businessRules.length > 0 ? (
           <div>
-            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Business Rules</h4>
+            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.businessRules}</h4>
             <ul className="text-[11px] text-text-secondary space-y-1">
               {meta.businessRules.map((r, i) => (
                 <li key={i} className="flex gap-1.5"><span className="text-accent shrink-0">-</span>{r}</li>
@@ -215,7 +171,7 @@ function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeG
         ) : null}
         {Array.isArray(meta?.crossDomainInteractions) && meta.crossDomainInteractions.length > 0 ? (
           <div>
-            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Cross-Domain</h4>
+            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.crossDomain}</h4>
             <ul className="text-[11px] text-text-secondary space-y-1">
               {meta.crossDomainInteractions.map((c, i) => (
                 <li key={i}>{c}</li>
@@ -225,7 +181,7 @@ function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeG
         ) : null}
         {flows.length > 0 && (
           <div>
-            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Flows</h4>
+            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.flows}</h4>
             <div className="space-y-1">
               {flows.map((f) => (
                 <button
@@ -255,13 +211,13 @@ function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeG
       <div className="space-y-3">
         {meta?.entryPoint ? (
           <div>
-            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Entry Point</h4>
+            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.entryPoint}</h4>
             <div className="text-[11px] font-mono text-accent">{meta.entryPoint}</div>
           </div>
         ) : null}
         {steps.length > 0 && (
           <div>
-            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Steps</h4>
+            <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.steps}</h4>
             <ol className="space-y-1">
               {steps.map((s, i) => (
                 <li key={s.id}>
@@ -287,7 +243,7 @@ function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeG
     return (
       <div className="space-y-3">
         <div>
-          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Implementation</h4>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{t.nodeInfo.implementation}</h4>
           <div className="text-[11px] font-mono text-text-secondary">
             {node.filePath}
             {node.lineRange && <span className="text-text-muted">:{node.lineRange[0]}-{node.lineRange[1]}</span>}
@@ -306,6 +262,7 @@ export default function NodeInfo() {
   const nodeHistory = useDashboardStore((s) => s.nodeHistory);
   const goBackNode = useDashboardStore((s) => s.goBackNode);
   const [languageExpanded, setLanguageExpanded] = useState(true);
+  const { t } = useI18n();
 
   const navigateToNode = useDashboardStore((s) => s.navigateToNode);
   const navigateToHistoryIndex = useDashboardStore((s) => s.navigateToHistoryIndex);
@@ -327,7 +284,7 @@ export default function NodeInfo() {
   if (!node) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-surface">
-        <p className="text-text-muted text-sm">Select a node to see details</p>
+        <p className="text-text-muted text-sm">{t.common.selectNode}</p>
       </div>
     );
   }
@@ -369,7 +326,7 @@ export default function NodeInfo() {
             className="text-[10px] font-semibold text-gold hover:text-gold-bright transition-colors flex items-center gap-1"
           >
             <span>←</span>
-            <span>Back</span>
+            <span>{t.common.back}</span>
           </button>
           <span className="text-text-muted text-[10px]">│</span>
           {historyNodes.slice(-3).map((h, i, arr) => (
@@ -419,7 +376,7 @@ export default function NodeInfo() {
               : "text-text-muted border border-border-subtle hover:text-gold hover:border-gold/30"
           }`}
         >
-          {focusNodeId === node.id ? "Unfocus" : "Focus"}
+          {focusNodeId === node.id ? t.common.unfocus : t.common.focus}
         </button>
       </div>
 
@@ -431,7 +388,7 @@ export default function NodeInfo() {
         <div className="text-xs text-text-secondary mb-4 rounded-lg border border-border-subtle bg-elevated/60 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="font-medium text-text-muted mb-1">File</div>
+              <div className="font-medium text-text-muted mb-1">{t.common.file}</div>
               <div className="font-mono truncate" title={node.filePath}>
                 {node.filePath}
                 {node.lineRange && (
@@ -446,7 +403,7 @@ export default function NodeInfo() {
               onClick={() => openCodeViewer(node.id)}
               className="shrink-0 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded border border-accent/30 text-accent hover:text-accent-bright hover:border-accent/60 transition-colors"
             >
-              Open code
+              {t.common.openCode}
             </button>
           </div>
         </div>
@@ -466,7 +423,7 @@ export default function NodeInfo() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            Language Concepts
+            {t.nodeInfo.languageConcepts}
           </button>
           {languageExpanded && (
             <div className="bg-accent/5 border border-accent/20 rounded-lg p-3">
@@ -481,7 +438,7 @@ export default function NodeInfo() {
       {node.tags.length > 0 && (
         <div className="mb-4">
           <h3 className="text-[11px] font-semibold text-accent uppercase tracking-wider mb-2">
-            Tags
+            {t.common.tags}
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {node.tags.map((tag) => (
@@ -510,7 +467,7 @@ export default function NodeInfo() {
       {childNodes.length > 0 && (
         <div className="mb-4">
           <h3 className="text-[11px] font-semibold text-gold uppercase tracking-wider mb-2">
-            Defined in this file ({childNodes.length})
+            {t.nodeInfo.definedInThisFile} ({childNodes.length})
           </h3>
           <div className="space-y-1">
             {childNodes.map((child) => {
@@ -548,14 +505,14 @@ export default function NodeInfo() {
       {otherConnections.length > 0 && (
         <div>
           <h3 className="text-[11px] font-semibold text-gold uppercase tracking-wider mb-2">
-            Connections ({otherConnections.length})
+            {t.common.connections} ({otherConnections.length})
           </h3>
           <div className="space-y-1.5">
             {otherConnections.map((edge, i) => {
               const isSource = edge.source === node.id;
               const otherId = isSource ? edge.target : edge.source;
               const otherNode = activeGraph?.nodes.find((n) => n.id === otherId);
-              const dirLabel = getDirectionalLabel(edge.type, isSource);
+              const dirLabel = getDirectionalLabel(edge.type, isSource, t);
               const arrow = isSource ? "\u2192" : "\u2190";
 
               return (

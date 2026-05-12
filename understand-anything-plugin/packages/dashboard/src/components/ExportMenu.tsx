@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useDashboardStore } from "../store";
+import { useI18n } from "../contexts/I18nContext";
 import type { KnowledgeGraph } from "@understand-anything/core/types";
 import { filterNodes, filterEdges } from "../utils/filters";
 
@@ -26,6 +27,7 @@ export default function ExportMenu() {
   const toggleExportMenu = useDashboardStore((s) => s.toggleExportMenu);
   const reactFlowInstance = useDashboardStore((s) => s.reactFlowInstance);
   const persona = useDashboardStore((s) => s.persona);
+  const { t } = useI18n();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -218,7 +220,7 @@ export default function ExportMenu() {
       <button
         onClick={toggleExportMenu}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-elevated text-text-secondary hover:text-text-primary transition-colors"
-        title="Export graph (E)"
+        title={t.export.title}
       >
         <svg
           className="w-4 h-4"
@@ -233,7 +235,7 @@ export default function ExportMenu() {
             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
           />
         </svg>
-        Export
+        {t.export.label}
       </button>
 
       {exportMenuOpen && (
@@ -247,7 +249,7 @@ export default function ExportMenu() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span>Export as PNG</span>
+              <span>{t.export.asPNG}</span>
             </button>
             <button
               onClick={exportSVG}
@@ -257,7 +259,7 @@ export default function ExportMenu() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
               </svg>
-              <span>Export as SVG</span>
+              <span>{t.export.asSVG}</span>
             </button>
             <button
               onClick={exportJSON}
@@ -267,7 +269,7 @@ export default function ExportMenu() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
               </svg>
-              <span>Export as JSON</span>
+              <span>{t.export.asJSON}</span>
             </button>
           </div>
         </div>
