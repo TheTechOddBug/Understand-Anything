@@ -107,6 +107,7 @@ export default function SearchBar() {
           onChange={handleInputChange}
           onFocus={() => setDropdownOpen(true)}
           placeholder={t.search.placeholder}
+          data-testid="search-input"
           className="flex-1 min-w-0 bg-elevated text-text-primary text-sm rounded-lg px-3 py-1.5 border border-border-subtle focus:outline-none focus:border-accent/50 placeholder-text-muted"
         />
         <div className="flex items-center gap-1 bg-elevated rounded-lg p-0.5 shrink-0">

@@ -296,7 +296,7 @@ function DashboardContent({
         description: t.keyboardShortcuts.focusSearch,
         action: () => {
           const searchInput = document.querySelector<HTMLInputElement>(
-            'input[placeholder*="Search"]'
+            '[data-testid="search-input"]'
           );
           searchInput?.focus();
         },
