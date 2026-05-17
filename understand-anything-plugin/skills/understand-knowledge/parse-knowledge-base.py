@@ -232,7 +232,7 @@ def build_name_to_stem_map(wiki_root: Path) -> dict[str, str]:
     basename_counts: dict[str, int] = {}
     for md_file in wiki_root.rglob("*.md"):
         rel = md_file.relative_to(wiki_root)
-        stem = str(rel.with_suffix(""))  # e.g., "decisions/decision-foo"
+        stem = rel.with_suffix("").as_posix()  # e.g., "decisions/decision-foo"
         basename = md_file.stem            # e.g., "decision-foo"
         # Full relative path always maps uniquely
         name_map[stem.lower()] = stem
@@ -313,7 +313,7 @@ def parse_wiki(root: Path) -> dict:
     article_ids: set[str] = set()
     for md_file in sorted(wiki_root.rglob("*.md")):
         rel = md_file.relative_to(wiki_root)
-        stem = str(rel.with_suffix(""))
+        stem = rel.with_suffix("").as_posix()
         # Only filter infra files at root level (no parent directory)
         if rel.parent == Path(".") and rel.name.lower() in INFRA_FILES:
             continue
@@ -327,7 +327,7 @@ def parse_wiki(root: Path) -> dict:
 
     for md_file in sorted(wiki_root.rglob("*.md")):
         rel = md_file.relative_to(wiki_root)
-        stem = str(rel.with_suffix(""))
+        stem = rel.with_suffix("").as_posix()
         basename = md_file.stem
 
         # Skip infrastructure files only at wiki root level
@@ -381,7 +381,7 @@ def parse_wiki(root: Path) -> dict:
             "complexity": complexity,
             "knowledgeMeta": {
                 "wikilinks": [wl["target"] for wl in wikilinks],
-                "category": category or None,
+                **({"category": category} if category else {}),
                 "content": text[:3000],  # First 3000 chars for LLM analysis
             },
         })
