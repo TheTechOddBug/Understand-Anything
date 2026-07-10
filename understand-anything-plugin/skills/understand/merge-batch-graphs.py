@@ -1108,6 +1108,7 @@ def main() -> None:
     # merged graph with content the agent labeled incorrectly.
     unrecognized_set = set(unrecognized_batch_files)
     batches: list[dict[str, Any]] = []
+    empty_batch_warnings: list[str] = []
     for f in batch_files:
         if f.name in unrecognized_set:
             continue
@@ -1117,6 +1118,17 @@ def main() -> None:
             n = len(batch.get("nodes", []))
             e = len(batch.get("edges", []))
             print(f"  {f.name}: {n} nodes, {e} edges", file=sys.stderr)
+            # A file that parses but contributes nothing is how a silent
+            # partial merge looks from the outside (see #484) — flag it
+            # loudly instead of relying on a downstream reviewer to notice.
+            if n == 0 and e == 0:
+                msg = (
+                    f"{f.name} loaded but contributed 0 nodes and 0 edges — "
+                    f"either the analyzer wrote an empty batch or the file "
+                    f"was read mid-write; inspect it directly"
+                )
+                print(f"  Warning: {msg}", file=sys.stderr)
+                empty_batch_warnings.append(msg)
 
     if not batches:
         print("Error: no valid batch files loaded", file=sys.stderr)
@@ -1137,6 +1149,17 @@ def main() -> None:
             f"— some nodes/edges silently dropped:"
         )
         for w in missing_part_warnings:
+            report.append(f"  - {w}")
+
+    # Surface empty-contribution batches to the phase report (same rationale
+    # as missing_part_warnings above — stderr alone gets buried).
+    if empty_batch_warnings:
+        report.append("")
+        report.append(
+            f"Warning: {len(empty_batch_warnings)} batch file(s) loaded but "
+            f"contributed no nodes or edges:"
+        )
+        for w in empty_batch_warnings:
             report.append(f"  - {w}")
 
     # Surface unrecognized-filename drops to the phase report so the

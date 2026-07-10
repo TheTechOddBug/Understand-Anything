@@ -1245,5 +1245,52 @@ class TestUnrecognizedBatchFilename(unittest.TestCase):
         self.assertNotIn("file:src/y.ts", node_ids)
 
 
+class TestEmptyBatchGuard(unittest.TestCase):
+    """A batch file that parses but contributes 0 nodes + 0 edges is how a
+    silent partial merge looks from the outside (#484) — it must be flagged
+    loudly on stderr AND in the phase report, without failing the merge.
+    """
+
+    def setUp(self) -> None:
+        import tempfile
+        self.tmp = Path(tempfile.mkdtemp(prefix="ua-mbg-empty-"))
+        self.intermediate = self.tmp / ".understand-anything" / "intermediate"
+        self.intermediate.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write_batch(self, name: str, nodes: list, edges: list) -> None:
+        import json as _j
+        (self.intermediate / name).write_text(
+            _j.dumps({"nodes": nodes, "edges": edges}),
+            encoding="utf-8",
+        )
+
+    def _run_merge(self) -> tuple[int, str]:
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(_MODULE_PATH), str(self.tmp)],
+            capture_output=True, text=True,
+        )
+        return result.returncode, result.stderr
+
+    def test_empty_batch_warns_but_does_not_fail(self) -> None:
+        self._write_batch("batch-1.json", [_file_node("src/a.ts")], [])
+        self._write_batch("batch-2.json", [], [])
+        rc, stderr = self._run_merge()
+        self.assertEqual(rc, 0)
+        self.assertIn("batch-2.json loaded but contributed 0 nodes and 0 edges", stderr)
+        # Re-emitted in the phase report section, not just the load log
+        self.assertIn("loaded but contributed no nodes or edges", stderr)
+
+    def test_no_warning_when_all_batches_contribute(self) -> None:
+        self._write_batch("batch-1.json", [_file_node("src/a.ts")], [])
+        rc, stderr = self._run_merge()
+        self.assertEqual(rc, 0)
+        self.assertNotIn("contributed 0 nodes and 0 edges", stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
