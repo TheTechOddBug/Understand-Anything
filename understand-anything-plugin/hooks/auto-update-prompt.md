@@ -25,7 +25,7 @@ Incrementally update the knowledge graph using deterministic structural fingerpr
 
 6. Get changed files:
    ```bash
-   git diff <lastCommitHash>..HEAD --name-only
+   git diff "<lastCommitHash>..HEAD" --name-only
    ```
    If no files changed: update `meta.json` with the new commit hash and **STOP**.
 
@@ -34,7 +34,7 @@ Incrementally update the knowledge graph using deterministic structural fingerpr
 
 8. Create intermediate directory:
    ```bash
-   mkdir -p $PROJECT_ROOT/.understand-anything/intermediate
+   mkdir -p "$PROJECT_ROOT/.understand-anything/intermediate"
    ```
 
 9. **Apply `.understandignore` exclusions** (same semantics as `/understand` Step 2.5 in `agents/project-scanner.md`).
@@ -80,9 +80,9 @@ Incrementally update the knowledge graph using deterministic structural fingerpr
 
    5. Run it:
       ```bash
-      node $PROJECT_ROOT/.understand-anything/intermediate/ignore-filter.mjs \
+      node "$PROJECT_ROOT/.understand-anything/intermediate/ignore-filter.mjs" \
         "$PLUGIN_ROOT" \
-        $PROJECT_ROOT/.understand-anything/intermediate/changed-files-pre.json
+        "$PROJECT_ROOT/.understand-anything/intermediate/changed-files-pre.json"
       ```
 
    6. Read `$PROJECT_ROOT/.understand-anything/intermediate/changed-files.json`. Pass the `kept` array as the input file list for Phase 1's fingerprint-check script.
@@ -291,7 +291,10 @@ Perform lightweight validation (no graph-reviewer agent):
 
 4. Clean up intermediate files:
    ```bash
-   rm -rf $PROJECT_ROOT/.understand-anything/intermediate
+   INTERMEDIATE_DIR="$PROJECT_ROOT/.understand-anything/intermediate"
+   if [ -n "$PROJECT_ROOT" ] && [ -d "$INTERMEDIATE_DIR" ]; then
+     rm -rf "$INTERMEDIATE_DIR"
+   fi
    ```
 
 5. Report a summary:
