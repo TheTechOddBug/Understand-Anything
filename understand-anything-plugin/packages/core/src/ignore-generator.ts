@@ -94,6 +94,17 @@ const TEST_PATTERN_GROUPS: Array<{ label: string; patterns: string[] }> = [
       "**/*Benchmark.cpp",
     ],
   },
+  {
+    // pytest / unittest discovery is filename-based, so large Python
+    // codebases (pandas, numpy, scikit-learn, tensorflow) commonly ship
+    // test_*.py or *_test.py files co-located with the module under test
+    // rather than clustered in a single tests/ tree.
+    label: "Python",
+    patterns: [
+      "**/test_*.py",
+      "**/*_test.py",
+    ],
+  },
 ];
 
 /**
