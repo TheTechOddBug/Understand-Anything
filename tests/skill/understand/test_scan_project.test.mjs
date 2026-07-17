@@ -532,6 +532,27 @@ describe('scan-project.mjs — data-dir resolution (.ua vs legacy)', () => {
     expect(r.status).toBe(0);
     expect(r.output.files.map(file => file.path)).toEqual(['src/index.ts']);
   });
+
+  it('composes CLI exclusions for benchmark scans regardless of flag order', () => {
+    projectRoot = setupTree({
+      '.ua/knowledge-graph.json': '{ "nodes": [] }\n',
+      '.understand-anything/meta.json': '{ "version": 1 }\n',
+      'generated/client.ts': 'export const generated = true;\n',
+      'src/index.ts': 'export const x = 1;\n',
+    });
+
+    for (const args of [
+      ['--exclude', 'generated/', '--exclude-analysis-data'],
+      ['--exclude-analysis-data', '--exclude', 'generated/'],
+    ]) {
+      const r = runScript(projectRoot, args);
+
+      expect(r.status, r.stderr).toBe(0);
+      expect(r.output.files.map(file => file.path)).toEqual(['src/index.ts']);
+      expect(r.output.filteredByIgnore).toBe(1);
+      expect(r.output.contentDigest).toMatch(/^[0-9a-f]{64}$/);
+    }
+  });
 });
 
 describe('scan-project.mjs — special-file recognition', () => {

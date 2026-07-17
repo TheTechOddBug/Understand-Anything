@@ -16,9 +16,9 @@
  *
  * What this script owns:
  *   - File enumeration (git ls-files preferred, recursive walk fallback)
- *   - `.understandignore` filtering (delegated to core's createIgnoreFilter,
- *     which reads the resolved data dir — `.ua/`, or legacy
- *     `.understand-anything/` when that directory already exists)
+ *   - `.understandignore` and CLI exclusion filtering (delegated to core's
+ *     createIgnoreFilter, which reads the resolved data dir — `.ua/`, or
+ *     legacy `.understand-anything/` when that directory already exists)
  *   - Per-file language detection (extension + filename table)
  *   - Per-file category assignment (priority-ordered rules from
  *     project-scanner.md Step 4)
@@ -26,7 +26,13 @@
  *   - Complexity estimation (project-scanner.md Step 7 thresholds)
  *
  * Usage:
- *   node scan-project.mjs <projectRoot> <outputPath> [--exclude-analysis-data]
+ *   node scan-project.mjs <projectRoot> <outputPath>
+ *     [--exclude <patterns>] [--exclude-analysis-data]
+ *
+ *   --exclude <patterns>  Comma-separated gitignore-style patterns to
+ *                         additionally exclude from the scan.
+ *   --exclude-analysis-data  Always exclude persistent `.ua/` and legacy
+ *                            `.understand-anything/` analysis data.
  *
  * Output JSON (subset of what project-scanner.md Phase 1 expects — the LLM
  * agent merges this with Step A's narrative fields and Step C's importMap to
@@ -582,9 +588,9 @@ function enumerateFiles(projectRoot) {
 // Filter accounting
 //
 // The project-scanner.md contract requires `filteredByIgnore` to count files
-// dropped *specifically* by user `.understandignore` patterns (the delta
-// beyond what the hardcoded defaults would have removed). We accomplish this
-// by building TWO filters:
+// dropped specifically by user `.understandignore` or CLI `--exclude`
+// patterns (the delta beyond what the hardcoded defaults would have removed).
+// We accomplish this by building TWO filters:
 //   - `defaultOnly`: defaults only, no user patterns
 //   - `combined`: defaults + user patterns (createIgnoreFilter)
 // and counting paths that the combined filter excludes but the defaults-only
@@ -686,20 +692,56 @@ function updateContentDigest(hash, posixPath, contentBytes) {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const [, , projectRoot, outputPath, ...options] = process.argv;
+  const args = process.argv.slice(2);
+  let projectRoot;
+  let outputPath;
+  let excludeAnalysisData = false;
+  const excludePatterns = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--exclude-analysis-data') {
+      excludeAnalysisData = true;
+      continue;
+    }
+    if (arg === '--exclude') {
+      const value = args[i + 1];
+      if (!value || value.startsWith('--')) {
+        process.stderr.write('scan-project.mjs failed: --exclude requires patterns\n');
+        process.exit(1);
+      }
+      excludePatterns.push(
+        ...value
+          .split(',')
+          .map(pattern => pattern.trim())
+          .filter(Boolean),
+      );
+      i++;
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      process.stderr.write(`scan-project.mjs failed: unknown option: ${arg}\n`);
+      process.exit(1);
+    }
+    if (!projectRoot) {
+      projectRoot = arg;
+      continue;
+    }
+    if (!outputPath) {
+      outputPath = arg;
+      continue;
+    }
+    process.stderr.write(`scan-project.mjs failed: unexpected argument: ${arg}\n`);
+    process.exit(1);
+  }
+
   if (!projectRoot || !outputPath) {
     process.stderr.write(
       'Usage: node scan-project.mjs <projectRoot> <outputPath> ' +
-      '[--exclude-analysis-data]\n',
+      '[--exclude <patterns>] [--exclude-analysis-data]\n',
     );
     process.exit(1);
   }
-  const unknownOption = options.find(option => option !== '--exclude-analysis-data');
-  if (unknownOption) {
-    process.stderr.write(`scan-project.mjs failed: unknown option: ${unknownOption}\n`);
-    process.exit(1);
-  }
-  const excludeAnalysisData = options.includes('--exclude-analysis-data');
 
   if (!existsSync(projectRoot)) {
     process.stderr.write(
@@ -722,10 +764,10 @@ async function main() {
       (!rel.startsWith('.ua/') && !rel.startsWith('.understand-anything/')),
   );
 
-  // 2. Filter via createIgnoreFilter (defaults + user .understandignore).
+  // 2. Filter via createIgnoreFilter (defaults + .understandignore + CLI excludes).
   //    Build a defaults-only filter in parallel to count user-driven drops.
-  const combined = createIgnoreFilter(projectRoot);
-  const userIgnoresPresent = hasUserIgnoreFile(projectRoot);
+  const combined = createIgnoreFilter(projectRoot, excludePatterns);
+  const userIgnoresPresent = hasUserIgnoreFile(projectRoot) || excludePatterns.length > 0;
   const defaultsOnly = userIgnoresPresent ? buildDefaultsOnlyFilter() : combined;
 
   let filteredByIgnore = 0;
@@ -739,7 +781,7 @@ async function main() {
     // Dropped by combined filter. If defaults-only would have ALSO dropped
     // it, this is a baseline default drop — not counted. If defaults-only
     // would have KEPT it, this drop is attributable to the user's
-    // .understandignore content.
+    // .understandignore content or CLI --exclude patterns.
     if (userIgnoresPresent && !defaultsOnly.isIgnored(rel)) {
       filteredByIgnore++;
     }
