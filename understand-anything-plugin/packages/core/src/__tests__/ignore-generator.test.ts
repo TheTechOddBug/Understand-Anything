@@ -168,6 +168,12 @@ describe("generateStarterIgnoreFile", () => {
       const content = generateStarterIgnoreFile(testDir);
       expect(content).toContain("# benches/");
     });
+
+    it("suggests spec/ directories (RSpec convention)", () => {
+      mkdirSync(join(testDir, "spec"), { recursive: true });
+      const content = generateStarterIgnoreFile(testDir);
+      expect(content).toContain("# spec/");
+    });
   });
 
   describe("language-grouped test file patterns", () => {
@@ -258,12 +264,32 @@ describe("generateStarterIgnoreFile", () => {
       expect(content).toContain("# **/*_bench.rs");
     });
 
+    it("includes Ruby RSpec + Minitest file patterns", () => {
+      const content = generateStarterIgnoreFile(testDir);
+      expect(content).toContain("# Ruby");
+      // RSpec — dominant in Rails-adjacent projects (discourse, homebrew).
+      expect(content).toContain("# **/*_spec.rb");
+      // Minitest — Rails core default (rails/rails, activerecord).
+      expect(content).toContain("# **/*_test.rb");
+      expect(content).toContain("# **/test_*.rb");
+    });
+
+    it("includes Ruby test-harness helper file patterns", () => {
+      const content = generateStarterIgnoreFile(testDir);
+      // Bootstrapping / configuration files loaded by RSpec + Minitest;
+      // conventionally under spec/ or test/ but sometimes referenced
+      // from elsewhere via `require_relative`.
+      expect(content).toContain("# **/spec_helper.rb");
+      expect(content).toContain("# **/test_helper.rb");
+      expect(content).toContain("# **/rails_helper.rb");
+    });
+
     it("groups patterns under the JS / TS sub-header", () => {
       const content = generateStarterIgnoreFile(testDir);
       expect(content).toContain("# JS / TS");
     });
 
-    it("emits language groups in stable order: JS, C#, Java, Go, C++, Python, Rust", () => {
+    it("emits language groups in stable order: JS, C#, Java, Go, C++, Python, Rust, Ruby", () => {
       const content = generateStarterIgnoreFile(testDir);
       const jsIdx = content.indexOf("# JS / TS");
       const csIdx = content.indexOf("# C# / .NET");
@@ -272,6 +298,7 @@ describe("generateStarterIgnoreFile", () => {
       const cppIdx = content.indexOf("# C++");
       const pyIdx = content.indexOf("# Python");
       const rustIdx = content.indexOf("# Rust");
+      const rubyIdx = content.indexOf("# Ruby");
       expect(jsIdx).toBeGreaterThan(-1);
       expect(csIdx).toBeGreaterThan(jsIdx);
       expect(javaIdx).toBeGreaterThan(csIdx);
@@ -279,6 +306,7 @@ describe("generateStarterIgnoreFile", () => {
       expect(cppIdx).toBeGreaterThan(goIdx);
       expect(pyIdx).toBeGreaterThan(cppIdx);
       expect(rustIdx).toBeGreaterThan(pyIdx);
+      expect(rubyIdx).toBeGreaterThan(rustIdx);
     });
 
     it("keeps all suggestions commented even with no detected dirs and no .gitignore", () => {
